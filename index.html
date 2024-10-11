@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Airplane Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 0 auto
+        }
+
+        #GameArea {
+            width: 100vw;
+            height: 100vh;
+            background-color: skyblue;
+            position: relative;
+        }
+
+        #airplane {
+            width: 50px;
+            height: 50px;
+            position: absolute;
+            background-image: url('airplane.jpg');
+            background-size: cover;
+        }
+    </style>
+</head>
+
+<body>
+    <H1>Airplane Game</H1>
+    <div id="GameArea">
+        <div id="Airplane"></div>
+    </div>
+    <script>
+        let Airplane = document.getElementById('Airplane');
+        let GameArea = document.getElementById('GameArea');
+        let positionY = GameArea.clientHeight / 2 - Airplane.clientHeight / 2;
+        /*
+        function updatePosition() {
+            airplane.style.top = `${positionY}px`;
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key == 'ArrowUp') {
+                positionY -= 10;
+            } else if (event.key == 'ArrowDown') {
+                positionY += 10;
+            }
+            updatePosition();
+        })
+
+        updatePosition();
+        */
+    </script>
+</body>
+
+</html>
