@@ -7,7 +7,9 @@
     <style>
         body {
             margin: 0;
-            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         h1 {
@@ -15,7 +17,7 @@
             margin: 0 auto
         }
 
-        #GameArea {
+        .GameArea {
             width: 100vw;
             height: 100vh;
             background-color: skyblue;
@@ -29,12 +31,54 @@
             background-image: url('airplane.jpg');
             background-size: cover;
         }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background-color: #ccc;
+        }
+
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 12px;
+            /* Rounded corners */
+            transition: background-color 0.3s ease;
+            /* smooth transition */
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 
 <body>
     <H1>Airplane Game</H1>
-    <div id="GameArea">
+    <div class="header">
+        <div id="ControllerSettings">
+            <label>Controller Settings</label>
+            <input id="P_ctrl" value="1">
+            <input id="D_ctrl" value="0">
+        </div>
+        <div id="ReferencePath">
+            <label>Reference Path</label>
+            <radio id="Step">Step</radio>
+            <radio id="Sin">Sin</radio>
+        </div>
+    </div>
+    <div class="GameArea">
+        <button class="button">Start</button>
+        <button id="btn_stop">Stop</button>
         <div id="Airplane"></div>
     </div>
     <script>
