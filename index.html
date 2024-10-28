@@ -82,6 +82,48 @@
             font-weight: bold;
         }
 
+        .manual_controll {
+            position: absolute;
+            z-index: 10;
+            bottom: 0px;
+            left: 0px;
+            padding: 20px;
+            border-top-right-radius: 10px;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .manual_controll input[type="range"] {
+            appearance: none;
+            -webkit-appearance: slider-vertical;
+            /* Make it vertical */
+            writing-mode: bt-lr;
+            width: 20px;
+            height: 200px;
+            background: lightgrey;
+            border-radius: 10px;
+        }
+
+        .manual_controll input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4CAF50;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .manual_controll input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #4caf50;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
         #GameArea {
             width: 100vw;
             height: 100vh;
@@ -177,6 +219,9 @@
     <div class="btn_container">
         <button id="btn_start" class="button button-start" onclick="toggleButtons()">Start</button>
         <button id="btn_stop" class="button button-stop" onclick="toggleButtons()" style="display:none;">Stop</button>
+    </div>
+    <div class="manual_controll">
+        <input type="range" min="0" max="100" value="50" id="btn_manctrl">
     </div>
     <div id="GameArea">
         <div id="airplane"></div>
