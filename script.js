@@ -79,8 +79,29 @@ document.addEventListener('DOMContentLoaded', (event) => {
         u = value;
     }
 
+    function changeRangeValue(delta) {
+        let newValue = parseFloat(rangeInput.value) + delta;
+        // Ensure the new value is within the range limits
+        newValue = Math.max(rangeInput.min, Math.min(newValue, rangeInput.max));
+        rangeInput.value = newValue.toFixed(2);
+    }
+
     // Add an event listener to detect changes on the range input
     rangeInput.addEventListener('input', readRangeValue);
+
+    // Add event listener for keydown events
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowUp') {
+            changeRangeValue(0.1); // Increase by 0.1
+        } else if (event.key === 'ArrowDown') {
+            changeRangeValue(-0.1); // Decrease by 0.1
+        }
+        readRangeValue();
+    })
+
+    rangeInput.addEventListener('mouseup', () => {
+        rangeInput.blur();
+    })
 
     // Optionally, read the initial value on page load
     readRangeValue();
