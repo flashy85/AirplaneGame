@@ -206,6 +206,10 @@
         </div>
     </div>
     <div class="ReferencePath">
+        <label>Model</label>
+        <div class="math-container">
+            $$ \dot x = \frac{1}{s^2} + u $$
+        </div>
         <label>Reference Path</label>
         <div class="RefPathGroup">
             <label for="Step:">Step:</label>
@@ -230,6 +234,11 @@
         let Airplane = document.getElementById('airplane');
         let GameArea = document.getElementById('GameArea');
         let positionY = GameArea.clientHeight / 2 - Airplane.clientHeight / 2;
+
+        const stepSize = 0.02; // Stepsize 20ms
+        const X0 = 0; // Initial x Position
+        const V0 = 0; // Initial Velocity
+        let u = 0; // Initial input
 
         function updatePosition() {
             airplane.style.top = `${positionY}px`;
@@ -257,6 +266,11 @@
                 stopButton.style.display = 'inline-block';
             }
         }
+
+        function updateModel(x_k, v_k, stepsize) {
+            x_k1 = 1;
+        }
+
     </script>
 </body>
 
