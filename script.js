@@ -105,11 +105,39 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     // Optionally, read the initial value on page load
     readRangeValue();
+
+    const canvas = document.getElementById('GameArea');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerHeight;
+    canvas.height = window.innerHeight;
+
+    // Function to draw a straight line
+    function drawLine() {
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height / 2);
+        ctx.lineTo(canvas.width, canvas.height / 2);
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    function drawSineWave() {
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height / 2);
+        for (let x = 0; x < canvas.width; x++) {
+            const y = canvas.height / 2 + 50 * Math.sin((x / canvas.width) * 4 * Math.PI);
+            ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = 'blue';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    // Draw the desired trajectory (uncomment one of the following lines)
+    //drawLine();
+    drawSineWave();
 })
-
-function getManualControl() {
-
-}
 
 function MainLoop() {
     let ret = updateModel(Y, V, u, stepSize);
