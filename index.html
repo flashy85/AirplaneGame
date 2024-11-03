@@ -208,7 +208,7 @@
     <div class="ReferencePath">
         <label>Model</label>
         <div class="math-container">
-            $$ \dot x = \frac{1}{s^2} + u $$
+            $$ G(s) = \frac{1}{s^2}$$
         </div>
         <label>Reference Path</label>
         <div class="RefPathGroup">
@@ -267,8 +267,10 @@
             }
         }
 
-        function updateModel(x_k, v_k, stepsize) {
-            x_k1 = 1;
+        function updateModel(x_k, v_k, u_k, stepsize) {
+            x_k1 = x_k + v_k * stepsize;
+            v_k1 = u_k;
+            return { x: x_k1, v: v_k1 };
         }
 
     </script>
