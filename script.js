@@ -28,17 +28,6 @@ function updatePosition() {
     Airplane.style.top = `${positionY}px`;
 }
 
-/*
-document.addEventListener('keydown', (event) => {
-    if (event.key == 'ArrowUp') {
-        positionY -= 10;
-    } else if (event.key == 'ArrowDown') {
-        positionY += 10;
-    }
-    updatePosition();
-})
-*/
-
 updatePosition();
 
 function updateModel(y_k, v_k, u_k, stepsize) {
@@ -77,6 +66,28 @@ function CalcSmoothXpos(Xk, PhysWidth, t) {
     // Logistic function formula
     const x = X0 + L / (1 + Math.exp(-k * (t - xMid) / tMax));
     return x;
+}
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    // Get the range input element by its ID
+    const rangeInput = document.getElementById('btn_manctrl');
+
+    // Function to read the current value of the range input
+    function readRangeValue() {
+        // Get the current value
+        const value = rangeInput.value;
+        u = value;
+    }
+
+    // Add an event listener to detect changes on the range input
+    rangeInput.addEventListener('input', readRangeValue);
+
+    // Optionally, read the initial value on page load
+    readRangeValue();
+})
+
+function getManualControl() {
+
 }
 
 function MainLoop() {
