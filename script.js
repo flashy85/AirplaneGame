@@ -1,16 +1,34 @@
 let Airplane = document.getElementById('airplane');
 let GameArea = document.getElementById('GameArea');
+
+let positionX = GameArea.clientWidth / 2 - Airplane.clientWidth / 2;
 let positionY = GameArea.clientHeight / 2 - Airplane.clientHeight / 2;
 
+/* Physical size */
+const PhysHeight = 2000; // Maximal physical height [m]
+const GndHeight = 100; // Ground height [m]
+const PhysWidth = 1000; // Maximal physical width [m]
+
+/* Default initial settings */
 const stepSize = 0.02; // Stepsize 20ms
-const X0 = 0; // Initial x Position
+const Y0 = 0; // Initial Y Position
 const V0 = 0; // Initial Velocity
-let u = 0; // Initial input
+const X0 = 50; // Initial X Position
+
+let Y = Y0; // Horizontal position [m]
+let V = V0; // Horizontal velocity [m/s]
+let u = 0.1; // Initial input [m/s^2]
+
+let X = X0;
+
+let t = 0;
 
 function updatePosition() {
-    airplane.style.top = `${positionY}px`;
+    Airplane.style.left = `${positionX}px`;
+    Airplane.style.top = `${positionY}px`;
 }
 
+/*
 document.addEventListener('keydown', (event) => {
     if (event.key == 'ArrowUp') {
         positionY -= 10;
@@ -19,8 +37,15 @@ document.addEventListener('keydown', (event) => {
     }
     updatePosition();
 })
+*/
 
 updatePosition();
+
+function updateModel(y_k, v_k, u_k, stepsize) {
+    let y_k1 = y_k + v_k * stepsize;
+    let v_k1 = v_k + u_k * stepsize;
+    return { y: y_k1, v: v_k1 };
+}
 
 function toggleButtons() {
     var startButton = document.getElementById('btn_start');
@@ -34,8 +59,60 @@ function toggleButtons() {
     }
 }
 
-function updateModel(x_k, v_k, u_k, stepsize) {
-    x_k1 = x_k + v_k * stepsize;
-    v_k1 = u_k;
-    return { x: x_k1, v: v_k1 };
+function getPhysicalYPosition(browserY, physHeight, gndHeight) {
+    // Berechne die Pixel-zu-Meter-Skalierung 
+    const pixelsPerMeter = (gameAreaHeight - airplaneHeight) / (physHeight + gndHeight);
+    // Berechne die physikalische Höhe in Metern 
+    const physicalY = (browserY / pixelsPerMeter) - gndHeight;
+    return physicalY;
+}
+
+function CalcSmoothXpos(Xk, PhysWidth, t) {
+    const tMax = 10; // Seconds
+    const Xend = GameArea.clientWidth / 2 - Airplane.clientWidth / 2;
+    const L = Xend - X0; // maximum growth (final position)
+    const k = 5; // Growth rate
+    const xMid = tMax / 2;
+
+    // Logistic function formula
+    const x = X0 + L / (1 + Math.exp(-k * (t - xMid) / tMax));
+    return x;
+}
+
+function MainLoop() {
+    let ret = updateModel(Y, V, u, stepSize);
+    Y = Math.min(ret.y, PhysHeight);
+    V = ret.v;
+
+    X = CalcSmoothXpos(X, PhysWidth, t);
+
+    positionX = getPixelXPosition(X, PhysWidth);
+    positionY = getPixelYPosition(Y, PhysHeight, GndHeight);
+    updatePosition();
+
+    t += stepSize;
+    t = Math.min(t, 100);
+}
+
+setInterval(MainLoop, stepSize);
+
+function getPixelYPosition(physicalY, physHeight, gndHeight) {
+    let gameAreaHeight = GameArea.clientHeight;
+    let airplaneHeight = Airplane.clientHeight;
+    // Calculate the pixels per meter scaling factor 
+    const pixelsPerMeter = (gameAreaHeight - airplaneHeight) / physHeight;
+    // Calculate the browser Y position in pixels 
+    const browserY = (physicalY + gndHeight) * pixelsPerMeter;
+    // Invert the Y position because browser coordinates are top-down 
+    const invertedY = gameAreaHeight - browserY - airplaneHeight;
+    return invertedY;
+}
+
+function getPixelXPosition(physicalX, physWidth) {
+    let gameAreaWidth = GameArea.clientWidth;
+    let airplaneWidth = Airplane.clientWidth;
+    // Calculate the pixels per meter scaling factor 
+    const pixelsPerMeter = (gameAreaWidth - airplaneWidth) / physWidth;
+    // Calculate the browser X position in pixels 
+    return physicalX * pixelsPerMeter;
 }
