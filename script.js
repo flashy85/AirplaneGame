@@ -137,6 +137,17 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // Draw the desired trajectory (uncomment one of the following lines)
     //drawLine();
     drawSineWave();
+
+    let currentMode = 'manual'; // Default mode
+
+    // Function to set the mode
+    function setMode(mode) {
+        currentMode = mode;
+    }
+
+    // Event listener for the buttons
+    document.getElementById('manual_btn').addEventListener('click', () => setMode('manual'));
+    document.getElementById('auto_btn').addEventListener('click', () => setMode('auto'));
 })
 
 function MainLoop() {
