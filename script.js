@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
             const y = canvas.height / 2 + 50 * Math.sin((x / canvas.width) * 4 * Math.PI);
             ctx.lineTo(x, y);
         }
-        ctx.strokeStyle = 'blue';
+        ctx.strokeStyle = 'red';
         ctx.lineWidth = 2;
         ctx.stroke();
     }
