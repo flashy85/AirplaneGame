@@ -143,11 +143,24 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // Function to set the mode
     function setMode(mode) {
         currentMode = mode;
+        if ('manual' == currentMode) {
+            manualBtn.classList.add('active');
+            autoBtn.classList.remove('active');
+        } else {
+            manualBtn.classList.remove('active');
+            autoBtn.classList.add('active');
+        }
     }
 
     // Event listener for the buttons
-    document.getElementById('manual_btn').addEventListener('click', () => setMode('manual'));
-    document.getElementById('auto_btn').addEventListener('click', () => setMode('auto'));
+    const manualBtn = document.getElementById('manual_btn');
+    const autoBtn = document.getElementById('auto_btn');
+
+    manualBtn.addEventListener('click', () => {
+        setMode('manual');
+    });
+
+    autoBtn.addEventListener('click', () => setMode('auto'));
 })
 
 function MainLoop() {
