@@ -130,8 +130,9 @@ h1 {
 #GameArea {
     width: 100vw;
     height: 100vh;
-    position: relative;
-    padding: 20px;
+    /*position: relative;*/
+    /*padding: 20px;*/
+    background: #87CEEB;
 }
 
 #airplane {
