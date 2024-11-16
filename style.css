@@ -85,6 +85,7 @@ h1 {
     flex-direction: column-reverse;
     align-items: center;
     background-color: rgba(0, 0, 0, 0.1);
+    /*transition: opacity 0.3s;*/
 }
 
 .manual_controll input[type="range"] {
@@ -114,6 +115,16 @@ h1 {
     background: #4caf50;
     cursor: pointer;
     border-radius: 50%;
+}
+
+.manual_controll.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+#btn_manctrl:disabled {
+    background: #ccc;
+    cursor: not-allowed;
 }
 
 #GameArea {

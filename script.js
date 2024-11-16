@@ -71,6 +71,12 @@ function CalcSmoothXpos(Xk, PhysWidth, t) {
 document.addEventListener('DOMContentLoaded', (event) => {
     // Get the range input element by its ID
     const rangeInput = document.getElementById('btn_manctrl');
+    const manualControll = document.querySelector('.manual_controll');
+    // Buttons for switch manual - auto
+    const manualBtn = document.getElementById('manual_btn');
+    const autoBtn = document.getElementById('auto_btn');
+
+    let currentMode = 'manual'; // Default mode
 
     // Function to read the current value of the range input
     function readRangeValue() {
@@ -91,12 +97,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     // Add event listener for keydown events
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'ArrowUp') {
-            changeRangeValue(0.1); // Increase by 0.1
-        } else if (event.key === 'ArrowDown') {
-            changeRangeValue(-0.1); // Decrease by 0.1
+        if ('manual' == currentMode) {
+            if (event.key === 'ArrowUp') {
+                changeRangeValue(0.1); // Increase by 0.1
+            } else if (event.key === 'ArrowDown') {
+                changeRangeValue(-0.1); // Decrease by 0.1
+            }
+            readRangeValue();
         }
-        readRangeValue();
     })
 
     rangeInput.addEventListener('mouseup', () => {
@@ -138,7 +146,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     //drawLine();
     drawSineWave();
 
-    let currentMode = 'manual'; // Default mode
+    // Event listener for the buttons
+
 
     // Function to set the mode
     function setMode(mode) {
@@ -146,15 +155,15 @@ document.addEventListener('DOMContentLoaded', (event) => {
         if ('manual' == currentMode) {
             manualBtn.classList.add('active');
             autoBtn.classList.remove('active');
+            manualControll.classList.remove('disabled');
+            rangeInput.disabled = false;
         } else {
             manualBtn.classList.remove('active');
             autoBtn.classList.add('active');
+            manualControll.classList.add('disabled');
+            manualRange.disabled = true;
         }
     }
-
-    // Event listener for the buttons
-    const manualBtn = document.getElementById('manual_btn');
-    const autoBtn = document.getElementById('auto_btn');
 
     manualBtn.addEventListener('click', () => {
         setMode('manual');
