@@ -37,12 +37,10 @@ let airplane = {
     scaledWidth: 100, // Desired width for image
     scaleHeight: 0, // height for image (will be calculated)
     path: []
-    //path: [{ x: canvas.width / 4 + 50, y: canvas.height / 2 + 50 }]
 };
 airplane.img.src = 'airplane.png';
 
-
-let backgroundX = 0;
+let backgroundX = 0; // Movement of background
 
 function updateModel(y_k, v_k, u_k, stepsize) {
     let y_k1 = y_k + v_k * stepsize;
