@@ -28,8 +28,8 @@ canvas.height = window.innerHeight;
 let airplane = {
     x: canvas.width / 2,
     y: canvas.height / 2,
-    //width: 100,
-    //height: 100,
+    PhysHeight: GndHeight,
+    PhysVvert: 0,
     speed: 5,
     img: new Image(),
     imgWidth: 0,
@@ -41,6 +41,8 @@ let airplane = {
 airplane.img.src = 'airplane.png';
 
 let backgroundX = 0; // Movement of background
+
+let lastFrameTime = performance.now();
 
 function updateModel(y_k, v_k, u_k, stepsize) {
     let y_k1 = y_k + v_k * stepsize;
@@ -60,7 +62,6 @@ function toggleButtons() {
     }
 }
 
-/*
 function getPhysicalYPosition(browserY, physHeight, gndHeight) {
     // Berechne die Pixel-zu-Meter-Skalierung 
     const pixelsPerMeter = (gameAreaHeight - airplaneHeight) / (physHeight + gndHeight);
@@ -68,7 +69,7 @@ function getPhysicalYPosition(browserY, physHeight, gndHeight) {
     const physicalY = (browserY / pixelsPerMeter) - gndHeight;
     return physicalY;
 }
-*/
+
 /*
 function CalcSmoothXpos(Xk, PhysWidth, t) {
     const tMax = 10; // Seconds
@@ -84,8 +85,6 @@ function CalcSmoothXpos(Xk, PhysWidth, t) {
 */
 
 document.addEventListener('DOMContentLoaded', (event) => {
-
-
     // Add an event listener to detect changes on the range input
     rangeInput.addEventListener('input', readRangeValue);
 
@@ -105,36 +104,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
         rangeInput.blur();
     })
 
-    // Optionally, read the initial value on page load
-    readRangeValue();
-
-    // Function to draw a straight line
-    /*
-    function drawLine() {
-        ctx.beginPath();
-        ctx.moveTo(0, canvas.height / 2);
-        ctx.lineTo(canvas.width, canvas.height / 2);
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        }
-        
-        function drawSineWave() {
-            ctx.beginPath();
-            ctx.moveTo(0, canvas.height / 2);
-            for (let x = 0; x < canvas.width; x++) {
-                const y = canvas.height / 2 + 50 * Math.sin((x / canvas.width) * 4 * Math.PI);
-                ctx.lineTo(x, y);
-                }
-                ctx.strokeStyle = 'red';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                }
-                */
-    // Draw the desired trajectory (uncomment one of the following lines)
-    //drawLine();
-    /*drawSineWave();*/
-
     manualBtn.addEventListener('click', () => setMode('manual'));
     autoBtn.addEventListener('click', () => setMode('auto'));
 
@@ -143,9 +112,37 @@ document.addEventListener('DOMContentLoaded', (event) => {
         airplane.imgHeight = airplane.img.height;
         let aspectRatio = airplane.imgWidth / airplane.imgHeight;
         airplane.scaleHeight = airplane.scaledWidth / aspectRatio;
+        readRangeValue(); // Optionally, read the initial value on page load
         gameLoop();
     }
 })
+
+// Function to draw a straight line
+/*
+function drawLine() {
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height / 2);
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    }
+    
+    function drawSineWave() {
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height / 2);
+        for (let x = 0; x < canvas.width; x++) {
+            const y = canvas.height / 2 + 50 * Math.sin((x / canvas.width) * 4 * Math.PI);
+            ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            }
+            */
+// Draw the desired trajectory (uncomment one of the following lines)
+//drawLine();
+//drawSineWave();
 
 function drawAirplane() {
     ctx.save();
@@ -168,14 +165,14 @@ function drawPath() {
     }
 }
 
-function update() {
-    backgroundX -= airplane.speed;
+function update(deltaTime) {
+    backgroundX -= airplane.speed * (deltaTime / 16); // 16ms ist etwa 60 fps
     if (backgroundX <= -canvas.width) {
         backgroundX = 0;
     }
     // Update path relativ to background movement
     for (let i = 0; i < airplane.path.length; i++) {
-        airplane.path[i].x -= airplane.speed;
+        airplane.path[i].x -= airplane.speed * (deltaTime / 16);
     }
     airplane.path.push({ x: airplane.x + airplane.scaledWidth / 2, y: airplane.y + airplane.scaleHeight / 2 })
     if (airplane.path.length > 130) {
@@ -191,11 +188,16 @@ function drawBackground() {
 }
 
 function gameLoop() {
+    const now = performance.now();
+    const deltaTime = now - lastFrameTime;
+    lastFrameTime = now;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
     drawPath();
     drawAirplane();
-    update();
+    update(deltaTime);
+
     requestAnimationFrame(gameLoop);
 }
 
@@ -247,10 +249,7 @@ function MainLoop() {
 */
 //setInterval(MainLoop, stepSize);
 
-/*
-function getPixelYPosition(physicalY, physHeight, gndHeight) {
-    let gameAreaHeight = GameArea.clientHeight;
-    let airplaneHeight = Airplane.clientHeight;
+function getPixelYPosition(physicalY, physHeight, gndHeight, gameAreaHeight, airplaneHeight) {
     // Calculate the pixels per meter scaling factor 
     const pixelsPerMeter = (gameAreaHeight - airplaneHeight) / physHeight;
     // Calculate the browser Y position in pixels 
@@ -259,7 +258,6 @@ function getPixelYPosition(physicalY, physHeight, gndHeight) {
     const invertedY = gameAreaHeight - browserY - airplaneHeight;
     return invertedY;
 }
-*/
 
 /*
 function getPixelXPosition(physicalX, physWidth) {
