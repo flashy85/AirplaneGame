@@ -97,6 +97,8 @@ h1 {
     height: 200px;
     background: lightgrey;
     border-radius: 10px;
+    /* Space for Slider value */
+    margin-bottom: 10px;
 }
 
 .manual_controll input[type="range"]::-webkit-slider-thumb {
@@ -120,6 +122,21 @@ h1 {
 .manual_controll.disabled {
     opacity: 0.5;
     pointer-events: none;
+}
+
+#sliderValue {
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    z-index: 1;
+    /* Verhindert, dass das Fenster inaktiv ist */
+    pointer-events: none;
+    /* Position left ob the slider */
+    left: 40px;
+    /* Center vertical */
+    transform: translateY(-50%);
 }
 
 #btn_manctrl:disabled {

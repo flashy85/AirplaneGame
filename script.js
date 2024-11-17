@@ -1,10 +1,9 @@
 /* Physical size */
-const PhysHeight = 2000; // Maximal physical height [m]
+const PhysHeightMax = 1000; // Maximal physical height [m]
 const GndHeight = 100; // Ground height [m]
 const PhysWidth = 1000; // Maximal physical width [m]
 
-/* Default initial settings */
-const stepSize = 0.02; // Stepsize 20ms
+const uMax = 1; // Min/Max [m/s^2]
 
 let u = 0; // Initial input [m/s^2]
 
@@ -12,6 +11,7 @@ let t = 0;
 
 // Get the range input element by its ID
 const rangeInput = document.getElementById('btn_manctrl');
+const sliderValue = document.getElementById('sliderValue');
 const manualControll = document.querySelector('.manual_controll');
 // Buttons for switch manual - auto
 const manualBtn = document.getElementById('manual_btn');
@@ -165,14 +165,15 @@ function drawPath() {
     }
 }
 
+/* Update all positions for next step */
 function update(deltaTime) {
-    backgroundX -= airplane.speed * (deltaTime / 16); // 16ms ist etwa 60 fps
+    backgroundX -= airplane.speed * (deltaTime * 1000 / 16);
     if (backgroundX <= -canvas.width) {
         backgroundX = 0;
     }
-    // Update path relativ to background movement
+    // Update airplane path relativ to background movement
     for (let i = 0; i < airplane.path.length; i++) {
-        airplane.path[i].x -= airplane.speed * (deltaTime / 16);
+        airplane.path[i].x -= airplane.speed * (deltaTime * 1000 / 16);
     }
     airplane.path.push({ x: airplane.x + airplane.scaledWidth / 2, y: airplane.y + airplane.scaleHeight / 2 })
     if (airplane.path.length > 130) {
@@ -187,10 +188,17 @@ function drawBackground() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
+/* Main loop for the game */
 function gameLoop() {
     const now = performance.now();
-    const deltaTime = now - lastFrameTime;
+    const deltaTime = (now - lastFrameTime) / 1000; // Convert to seconds
     lastFrameTime = now;
+
+    let ret = updateModel(airplane.PhysHeight, airplane.PhysVvert, u, deltaTime);
+    airplane.PhysHeight = Math.max(Math.min(ret.y, PhysHeightMax - 100), GndHeight);
+    airplane.PhysVvert = ret.v;
+
+    airplane.y = getPixelYPosition(airplane.PhysHeight, PhysHeightMax, GndHeight, canvas.height, airplane.scaleHeight);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
@@ -205,7 +213,16 @@ function gameLoop() {
 function readRangeValue() {
     // Get the current value
     const value = rangeInput.value;
-    u = value;
+    u = value * uMax;
+
+    sliderValue.textContent = parseFloat(u).toFixed(2);
+    /* Position the window along the vertical axes of the slider */
+    const percent = (rangeInput.value - rangeInput.min) / (rangeInput.max - rangeInput.min);
+    const sliderHeight = rangeInput.offsetHeight;
+    const valueHeight = sliderValue.offsetHeight;
+    /* The padding of .manual_controll */
+    const paddingAdjustment = 20;
+    sliderValue.style.bottom = `${percent * sliderHeight - (valueHeight / 2) + paddingAdjustment}px`;
 }
 
 function changeRangeValue(delta) {
@@ -230,24 +247,6 @@ function setMode(mode) {
         rangeInput.disabled = true;
     }
 }
-
-/*
-function MainLoop() {
-    let ret = updateModel(Y, V, u, stepSize);
-    Y = Math.min(ret.y, PhysHeight);
-    V = ret.v;
-
-    X = CalcSmoothXpos(X, PhysWidth, t);
-
-    positionX = getPixelXPosition(X, PhysWidth);
-    positionY = getPixelYPosition(Y, PhysHeight, GndHeight);
-    updatePosition();
-
-    t += stepSize;
-    t = Math.min(t, 100);
-}
-*/
-//setInterval(MainLoop, stepSize);
 
 function getPixelYPosition(physicalY, physHeight, gndHeight, gameAreaHeight, airplaneHeight) {
     // Calculate the pixels per meter scaling factor 
