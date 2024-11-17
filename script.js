@@ -1,34 +1,48 @@
-let Airplane = document.getElementById('airplane');
-let GameArea = document.getElementById('GameArea');
-
-let positionX = GameArea.clientWidth / 2 - Airplane.clientWidth / 2;
-let positionY = GameArea.clientHeight / 2 - Airplane.clientHeight / 2;
-
 /* Physical size */
-const PhysHeight = 2000; // Maximal physical height [m]
+const PhysHeightMax = 1000; // Maximal physical height [m]
 const GndHeight = 100; // Ground height [m]
 const PhysWidth = 1000; // Maximal physical width [m]
 
-/* Default initial settings */
-const stepSize = 0.02; // Stepsize 20ms
-const Y0 = 0; // Initial Y Position
-const V0 = 0; // Initial Velocity
-const X0 = 50; // Initial X Position
+const uMax = 1; // Min/Max [m/s^2]
 
-let Y = Y0; // Horizontal position [m]
-let V = V0; // Horizontal velocity [m/s]
-let u = 0.1; // Initial input [m/s^2]
-
-let X = X0;
+let u = 0; // Initial input [m/s^2]
 
 let t = 0;
 
-function updatePosition() {
-    Airplane.style.left = `${positionX}px`;
-    Airplane.style.top = `${positionY}px`;
-}
+// Get the range input element by its ID
+const rangeInput = document.getElementById('btn_manctrl');
+const sliderValue = document.getElementById('sliderValue');
+const manualControll = document.querySelector('.manual_controll');
+// Buttons for switch manual - auto
+const manualBtn = document.getElementById('manual_btn');
+const autoBtn = document.getElementById('auto_btn');
 
-updatePosition();
+const canvas = document.getElementById('GameArea');
+const ctx = canvas.getContext('2d');
+
+let currentMode = 'manual'; // Default mode
+
+canvas.width = window.innerHeight;
+canvas.height = window.innerHeight;
+
+let airplane = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    PhysHeight: GndHeight,
+    PhysVvert: 0,
+    speed: 5,
+    img: new Image(),
+    imgWidth: 0,
+    imgHeight: 0,
+    scaledWidth: 100, // Desired width for image
+    scaleHeight: 0, // height for image (will be calculated)
+    path: []
+};
+airplane.img.src = 'airplane.png';
+
+let backgroundX = 0; // Movement of background
+
+let lastFrameTime = performance.now();
 
 function updateModel(y_k, v_k, u_k, stepsize) {
     let y_k1 = y_k + v_k * stepsize;
@@ -56,6 +70,7 @@ function getPhysicalYPosition(browserY, physHeight, gndHeight) {
     return physicalY;
 }
 
+/*
 function CalcSmoothXpos(Xk, PhysWidth, t) {
     const tMax = 10; // Seconds
     const Xend = GameArea.clientWidth / 2 - Airplane.clientWidth / 2;
@@ -67,31 +82,9 @@ function CalcSmoothXpos(Xk, PhysWidth, t) {
     const x = X0 + L / (1 + Math.exp(-k * (t - xMid) / tMax));
     return x;
 }
+*/
 
 document.addEventListener('DOMContentLoaded', (event) => {
-    // Get the range input element by its ID
-    const rangeInput = document.getElementById('btn_manctrl');
-    const manualControll = document.querySelector('.manual_controll');
-    // Buttons for switch manual - auto
-    const manualBtn = document.getElementById('manual_btn');
-    const autoBtn = document.getElementById('auto_btn');
-
-    let currentMode = 'manual'; // Default mode
-
-    // Function to read the current value of the range input
-    function readRangeValue() {
-        // Get the current value
-        const value = rangeInput.value;
-        u = value;
-    }
-
-    function changeRangeValue(delta) {
-        let newValue = parseFloat(rangeInput.value) + delta;
-        // Ensure the new value is within the range limits
-        newValue = Math.max(rangeInput.min, Math.min(newValue, rangeInput.max));
-        rangeInput.value = newValue.toFixed(2);
-    }
-
     // Add an event listener to detect changes on the range input
     rangeInput.addEventListener('input', readRangeValue);
 
@@ -111,87 +104,151 @@ document.addEventListener('DOMContentLoaded', (event) => {
         rangeInput.blur();
     })
 
-    // Optionally, read the initial value on page load
-    readRangeValue();
+    manualBtn.addEventListener('click', () => setMode('manual'));
+    autoBtn.addEventListener('click', () => setMode('auto'));
 
-    const canvas = document.getElementById('GameArea');
-    const ctx = canvas.getContext('2d');
-
-    canvas.width = window.innerHeight;
-    canvas.height = window.innerHeight;
-
-    // Function to draw a straight line
-    function drawLine() {
-        ctx.beginPath();
-        ctx.moveTo(0, canvas.height / 2);
-        ctx.lineTo(canvas.width, canvas.height / 2);
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+    airplane.img.onload = () => {
+        airplane.imgWidth = airplane.img.width;
+        airplane.imgHeight = airplane.img.height;
+        let aspectRatio = airplane.imgWidth / airplane.imgHeight;
+        airplane.scaleHeight = airplane.scaledWidth / aspectRatio;
+        readRangeValue(); // Optionally, read the initial value on page load
+        gameLoop();
     }
+})
 
+// Function to draw a straight line
+/*
+function drawLine() {
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height / 2);
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    }
+    
     function drawSineWave() {
         ctx.beginPath();
         ctx.moveTo(0, canvas.height / 2);
         for (let x = 0; x < canvas.width; x++) {
             const y = canvas.height / 2 + 50 * Math.sin((x / canvas.width) * 4 * Math.PI);
             ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            }
+            */
+// Draw the desired trajectory (uncomment one of the following lines)
+//drawLine();
+//drawSineWave();
+
+function drawAirplane() {
+    ctx.save();
+    ctx.translate(airplane.x + airplane.scaledWidth / 2, airplane.y + airplane.scaleHeight / 2);
+    ctx.scale(-1, 1); // mirror image
+    ctx.drawImage(airplane.img, -airplane.scaledWidth / 2, -airplane.scaleHeight / 2, airplane.scaledWidth, airplane.scaleHeight);
+    ctx.restore();
+}
+
+function drawPath() {
+    if (airplane.path.length > 1) {
+        ctx.beginPath();
+        ctx.moveTo(airplane.path[0].x, airplane.path[0].y);
+        for (let i = 1; i < airplane.path.length; i++) {
+            ctx.lineTo(airplane.path[i].x, airplane.path[i].y);
         }
-        ctx.strokeStyle = 'red';
+        ctx.strokeStyle = 'blue';
         ctx.lineWidth = 2;
         ctx.stroke();
     }
-
-    // Draw the desired trajectory (uncomment one of the following lines)
-    //drawLine();
-    drawSineWave();
-
-    // Event listener for the buttons
-
-
-    // Function to set the mode
-    function setMode(mode) {
-        currentMode = mode;
-        if ('manual' == currentMode) {
-            manualBtn.classList.add('active');
-            autoBtn.classList.remove('active');
-            manualControll.classList.remove('disabled');
-            rangeInput.disabled = false;
-        } else {
-            manualBtn.classList.remove('active');
-            autoBtn.classList.add('active');
-            manualControll.classList.add('disabled');
-            manualRange.disabled = true;
-        }
-    }
-
-    manualBtn.addEventListener('click', () => {
-        setMode('manual');
-    });
-
-    autoBtn.addEventListener('click', () => setMode('auto'));
-})
-
-function MainLoop() {
-    let ret = updateModel(Y, V, u, stepSize);
-    Y = Math.min(ret.y, PhysHeight);
-    V = ret.v;
-
-    X = CalcSmoothXpos(X, PhysWidth, t);
-
-    positionX = getPixelXPosition(X, PhysWidth);
-    positionY = getPixelYPosition(Y, PhysHeight, GndHeight);
-    updatePosition();
-
-    t += stepSize;
-    t = Math.min(t, 100);
 }
 
-setInterval(MainLoop, stepSize);
+/* Update all positions for next step */
+function update(deltaTime) {
+    backgroundX -= airplane.speed * (deltaTime * 1000 / 16);
+    if (backgroundX <= -canvas.width) {
+        backgroundX = 0;
+    }
+    // Update airplane path relativ to background movement
+    for (let i = 0; i < airplane.path.length; i++) {
+        airplane.path[i].x -= airplane.speed * (deltaTime * 1000 / 16);
+    }
+    airplane.path.push({ x: airplane.x + airplane.scaledWidth / 2, y: airplane.y + airplane.scaleHeight / 2 })
+    if (airplane.path.length > 130) {
+        airplane.path.shift();
+    }
+}
 
-function getPixelYPosition(physicalY, physHeight, gndHeight) {
-    let gameAreaHeight = GameArea.clientHeight;
-    let airplaneHeight = Airplane.clientHeight;
+function drawBackground() {
+    //ctx.drawImage(bg, backgroundX, 0, canvas.width, canvas.height);
+    //ctx.drawImage(bg, backgroundX + canvas.width, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#87CEEB';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+/* Main loop for the game */
+function gameLoop() {
+    const now = performance.now();
+    const deltaTime = (now - lastFrameTime) / 1000; // Convert to seconds
+    lastFrameTime = now;
+
+    let ret = updateModel(airplane.PhysHeight, airplane.PhysVvert, u, deltaTime);
+    airplane.PhysHeight = Math.max(Math.min(ret.y, PhysHeightMax - 100), GndHeight);
+    airplane.PhysVvert = ret.v;
+
+    airplane.y = getPixelYPosition(airplane.PhysHeight, PhysHeightMax, GndHeight, canvas.height, airplane.scaleHeight);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground();
+    drawPath();
+    drawAirplane();
+    update(deltaTime);
+
+    requestAnimationFrame(gameLoop);
+}
+
+// Function to read the current value of the range input
+function readRangeValue() {
+    // Get the current value
+    const value = rangeInput.value;
+    u = value * uMax;
+
+    sliderValue.textContent = parseFloat(u).toFixed(2);
+    /* Position the window along the vertical axes of the slider */
+    const percent = (rangeInput.value - rangeInput.min) / (rangeInput.max - rangeInput.min);
+    const sliderHeight = rangeInput.offsetHeight;
+    const valueHeight = sliderValue.offsetHeight;
+    /* The padding of .manual_controll */
+    const paddingAdjustment = 20;
+    sliderValue.style.bottom = `${percent * sliderHeight - (valueHeight / 2) + paddingAdjustment}px`;
+}
+
+function changeRangeValue(delta) {
+    let newValue = parseFloat(rangeInput.value) + delta;
+    // Ensure the new value is within the range limits
+    newValue = Math.max(rangeInput.min, Math.min(newValue, rangeInput.max));
+    rangeInput.value = newValue.toFixed(2);
+}
+
+// Function to set the mode
+function setMode(mode) {
+    currentMode = mode;
+    if ('manual' == currentMode) {
+        manualBtn.classList.add('active');
+        autoBtn.classList.remove('active');
+        manualControll.classList.remove('disabled');
+        rangeInput.disabled = false;
+    } else {
+        manualBtn.classList.remove('active');
+        autoBtn.classList.add('active');
+        manualControll.classList.add('disabled');
+        rangeInput.disabled = true;
+    }
+}
+
+function getPixelYPosition(physicalY, physHeight, gndHeight, gameAreaHeight, airplaneHeight) {
     // Calculate the pixels per meter scaling factor 
     const pixelsPerMeter = (gameAreaHeight - airplaneHeight) / physHeight;
     // Calculate the browser Y position in pixels 
@@ -201,6 +258,7 @@ function getPixelYPosition(physicalY, physHeight, gndHeight) {
     return invertedY;
 }
 
+/*
 function getPixelXPosition(physicalX, physWidth) {
     let gameAreaWidth = GameArea.clientWidth;
     let airplaneWidth = Airplane.clientWidth;
@@ -209,3 +267,4 @@ function getPixelXPosition(physicalX, physWidth) {
     // Calculate the browser X position in pixels 
     return physicalX * pixelsPerMeter;
 }
+    */
