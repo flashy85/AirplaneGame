@@ -2,6 +2,7 @@
 const PhysHeightMax = 1000; // Maximal physical height [m]
 const GndHeight = 100; // Ground height [m]
 const PhysWidth = 1000; // Maximal physical width [m]
+const MaxTimeFrame = 60; // Number of seconds to future and past [s] / therefore twice this parameter in total
 
 const uMax = 1; // Min/Max [m/s^2]
 
@@ -44,9 +45,15 @@ let airplane = {
     imgHeight: 0,
     scaledWidth: 100, // Desired width for image
     scaleHeight: 0, // height for image (will be calculated)
+    time: [],
     path: []
 };
 airplane.img.src = 'airplane.png';
+
+let refpath = {
+    color: 'red',
+    path: []
+}
 
 let backgroundX = 0; // Movement of background
 
@@ -155,6 +162,25 @@ function drawLine() {
 //drawLine();
 //drawSineWave();
 
+function drawRefPath(path, color) {
+    if (path.length > 1) {
+        ctx.beginPath();
+        for (let i = 0; i < path.length; i++) {
+            let point = path[i];
+            let xPixel = getPixelXPosition(point.time, MaxTimeFrame, canvas.width);
+            let yPixel = getPixelYPosition(point.y, PhysHeightMax, GndHeight, canvas.height, 2);
+            if (0 == i) {
+                ctx.moveTo(xPixel, yPixel);
+            } else {
+                ctx.lineTo(xPixel, yPixel);
+            }
+        }
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+}
+
 function drawAirplane() {
     ctx.save();
     ctx.translate(airplane.x + airplane.scaledWidth / 2, airplane.y + airplane.scaleHeight / 2);
@@ -190,6 +216,17 @@ function update(deltaTime) {
     if (airplane.path.length > 130) {
         airplane.path.shift();
     }
+    if (refpath.path.length > 1) {
+        // Update reference path
+        for (let i = 0; i < refpath.path.length; i++) {
+            refpath.path[i].time -= deltaTime;
+        }
+        if (refpath.path[0].time < -MaxTimeFrame) {
+            refpath.path.shift();
+        }
+    }
+    // Add new value for reference path
+    refpath.path.push({ time: MaxTimeFrame, y: DsrdPhysHeight });
 }
 
 function drawBackground() {
@@ -221,6 +258,7 @@ function gameLoop() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
+    drawRefPath(refpath.path, refpath.color);
     drawPath();
     drawAirplane();
     update(deltaTime);
@@ -277,6 +315,12 @@ function setMode(mode) {
         manualControll.classList.add('disabled');
         rangeInput.disabled = true;
     }
+}
+
+function getPixelXPosition(_Time, _MaxTimeFrame, _CanvasWidth) {
+    const pixelsPerSecond = _CanvasWidth / (2 * _MaxTimeFrame);
+    const xPos = (_Time + _MaxTimeFrame) * pixelsPerSecond;
+    return xPos;
 }
 
 function getPixelYPosition(physicalY, physHeight, gndHeight, gameAreaHeight, airplaneHeight) {
