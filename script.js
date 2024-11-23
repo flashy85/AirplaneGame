@@ -16,13 +16,16 @@ const manualControll = document.querySelector('.manual_controll');
 // Buttons for switch manual - auto
 const manualBtn = document.getElementById('manual_btn');
 const autoBtn = document.getElementById('auto_btn');
+// Reference Path
+const SelSzenario = document.getElementById('scenarioSelect');
+const InDsrdHeightField = document.getElementById('in_DesiredHeight');
 
 const canvas = document.getElementById('GameArea');
 const ctx = canvas.getContext('2d');
 
 let currentMode = 'manual'; // Default mode
 
-const DsrdPhysHeight = 500;
+let DsrdPhysHeight = 500;
 let DsrdPhysHeight_Lval = DsrdPhysHeight;
 
 let CtrlIntegral = 0;
@@ -93,6 +96,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // Add an event listener to detect changes on the range input
     rangeInput.addEventListener('input', readRangeValue);
 
+    InDsrdHeightField.addEventListener('input', readDesiredHeight);
+
     // Add event listener for keydown events
     document.addEventListener('keydown', (event) => {
         if ('manual' == currentMode) {
@@ -118,6 +123,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         let aspectRatio = airplane.imgWidth / airplane.imgHeight;
         airplane.scaleHeight = airplane.scaledWidth / aspectRatio;
         readRangeValue(); // Optionally, read the initial value on page load
+        readDesiredHeight();
         gameLoop();
     }
 })
@@ -236,6 +242,18 @@ function readRangeValue() {
     /* The padding of .manual_controll */
     const paddingAdjustment = 20;
     sliderValue.style.bottom = `${percent * sliderHeight - (valueHeight / 2) + paddingAdjustment}px`;
+}
+
+// Read desired height
+function readDesiredHeight() {
+    const value = InDsrdHeightField.value;
+    if (isNaN(value)) {
+        value = DsrdPhysHeight;
+    }
+    let _DsrdPhysHeight = Math.max(GndHeight, Math.min(parseFloat(value), PhysHeightMax));
+    if (_DsrdPhysHeight != value) {
+        InDsrdHeightField.value = DsrdPhysHeight;
+    }
 }
 
 function changeRangeValue(delta) {
