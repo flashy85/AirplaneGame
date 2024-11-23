@@ -22,6 +22,11 @@ const ctx = canvas.getContext('2d');
 
 let currentMode = 'manual'; // Default mode
 
+const DsrdPhysHeight = 500;
+let DsrdPhysHeight_Lval = DsrdPhysHeight;
+
+let CtrlIntegral = 0;
+
 canvas.width = window.innerHeight;
 canvas.height = window.innerHeight;
 
@@ -194,6 +199,14 @@ function gameLoop() {
     const deltaTime = (now - lastFrameTime) / 1000; // Convert to seconds
     lastFrameTime = now;
 
+    if ('auto' == currentMode) {
+        let DsrdPhysVvert = (DsrdPhysHeight_Lval - DsrdPhysHeight) / deltaTime;
+        let uk = CalcCtrl(airplane.PhysHeight, airplane.PhysVvert, DsrdPhysHeight, DsrdPhysVvert, deltaTime);
+        // Ensure the new value is within the range limits
+        uk = Math.max(rangeInput.min, Math.min(uk, rangeInput.max));
+        rangeInput.value = uk.toFixed(2);
+        readRangeValue();
+    }
     let ret = updateModel(airplane.PhysHeight, airplane.PhysVvert, u, deltaTime);
     airplane.PhysHeight = Math.max(Math.min(ret.y, PhysHeightMax - 100), GndHeight);
     airplane.PhysVvert = ret.v;
@@ -256,6 +269,29 @@ function getPixelYPosition(physicalY, physHeight, gndHeight, gameAreaHeight, air
     // Invert the Y position because browser coordinates are top-down 
     const invertedY = gameAreaHeight - browserY - airplaneHeight;
     return invertedY;
+}
+
+function CalcCtrl(PhysHeight, PhysVvert, DsrdPhysHeight, DsrdPhysVvert, deltaTime) {
+    const inputField_Ctrl_P = document.getElementById('P_ctrl');
+    const inputField_Ctrl_I = document.getElementById('I_ctrl');
+    const inputField_Ctrl_D = document.getElementById('D_ctrl');
+    let Ctrl_P = parseFloat(inputField_Ctrl_P.value);
+    let Ctrl_I = parseFloat(inputField_Ctrl_I.value);
+    let Ctrl_D = parseFloat(inputField_Ctrl_D.value);
+    if (isNaN(Ctrl_P)) {
+        Ctrl_P = 0;
+    }
+    if (isNaN(Ctrl_I)) {
+        Ctrl_I = 0;
+    }
+    if (isNaN(Ctrl_D)) {
+        Ctrl_D = 0;
+    }
+    const PhysHeightError = DsrdPhysHeight - PhysHeight;
+    const PhysVvertError = DsrdPhysVvert - PhysVvert;
+    CtrlIntegral += PhysHeightError * deltaTime;
+    uk = PhysHeightError * Ctrl_P + PhysVvertError * Ctrl_D + CtrlIntegral * Ctrl_I;
+    return uk;
 }
 
 /*
