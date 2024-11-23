@@ -66,12 +66,41 @@ h1 {
 }
 
 .RefPathGroup {
-    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    margin-top: 15px;
 }
 
 .RefPathGroup label {
-    width: 35px;
+    margin-right: 20px;
     font-weight: bold;
+}
+
+.number-field-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.number-field-wrapper input[type="number"] {
+    width: 50px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px 0 0 5px;
+}
+
+.number-field-wrapper .unit {
+    padding: 5px;
+    background: lightgrey;
+    border: 1px solid #ccc;
+    border-left: none;
+    border-radius: 0 5px 5px 0;
+}
+
+#scenarioSelect {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
 }
 
 .manual_controll {

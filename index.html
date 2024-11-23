@@ -37,14 +37,22 @@
         <div class="math-container">
             $$ G(s) = \frac{1}{s^2}$$
         </div>
-        <label>Reference Path</label>
+        <label>Reference Path:</label>
+        <!-- Dropdown menue -->
         <div class="RefPathGroup">
-            <label for="Step:">Step:</label>
-            <input type="radio" id="Step" name="scenario">
+            <label for="scenarioSelect">Szenario:</label>
+            <select id="scenarioSelect" name="scenario">
+                <option value="Step">step</option>
+                <option value="Sinus">Sinus (not yet done)</option>
+            </select>
         </div>
+        <!--- Input Form -->
         <div class="RefPathGroup">
-            <label for="Sin">Sinus:</label>
-            <input type="radio" id="Sin" name="scenario">
+            <label for="StepHeight">Desired Height:</label>
+            <div class="number-field-wrapper">
+                <input type="number" class="RefPathInField" id="in_DesiredHeight" name="in_DesiredHeight">
+                <span class="unit">m</span>
+            </div>
         </div>
     </div>
     <div class="btn_container">
