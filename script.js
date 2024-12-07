@@ -276,9 +276,10 @@ function readRangeValue() {
 
 // Read desired height
 function readDesiredHeight() {
-    const value = InDsrdHeightField.value;
-    if (isNaN(value)) {
+    let value = InDsrdHeightField.value;
+    if (isNaN(value) || value.trim() === "") {
         value = DsrdPhysHeight;
+        InDsrdHeightField.value = DsrdPhysHeight;
     }
     let _DsrdPhysHeight = Math.max(GndHeight, Math.min(parseFloat(value), PhysHeightMax));
     if (_DsrdPhysHeight != value) {
@@ -326,7 +327,7 @@ function getPixelYPosition(physicalY, physHeight, gndHeight, gameAreaHeight, air
     return invertedY;
 }
 
-function CalcCtrl(PhysHeight, PhysVvert, DsrdPhysHeight, DsrdPhysVvert, deltaTime) {
+function CalcCtrl(PhysHeight, PhysVvert, _DsrdPhysHeight, DsrdPhysVvert, deltaTime) {
     const inputField_Ctrl_P = document.getElementById('P_ctrl');
     const inputField_Ctrl_I = document.getElementById('I_ctrl');
     const inputField_Ctrl_D = document.getElementById('D_ctrl');
@@ -342,7 +343,7 @@ function CalcCtrl(PhysHeight, PhysVvert, DsrdPhysHeight, DsrdPhysVvert, deltaTim
     if (isNaN(Ctrl_D)) {
         Ctrl_D = 0;
     }
-    const PhysHeightError = DsrdPhysHeight - PhysHeight;
+    const PhysHeightError = _DsrdPhysHeight - PhysHeight;
     const PhysVvertError = DsrdPhysVvert - PhysVvert;
     CtrlIntegral += PhysHeightError * deltaTime;
     uk = PhysHeightError * Ctrl_P + PhysVvertError * Ctrl_D + CtrlIntegral * Ctrl_I;
