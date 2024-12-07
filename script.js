@@ -136,16 +136,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 })
 
 // Function to draw a straight line
-/*
-function drawLine() {
-    ctx.beginPath();
-    ctx.moveTo(0, canvas.height / 2);
-    ctx.lineTo(canvas.width, canvas.height / 2);
-    ctx.strokeStyle = 'red';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    }
-    
+/*    
     function drawSineWave() {
         ctx.beginPath();
         ctx.moveTo(0, canvas.height / 2);
@@ -293,6 +284,7 @@ function readDesiredHeight() {
     if (_DsrdPhysHeight != value) {
         InDsrdHeightField.value = DsrdPhysHeight;
     }
+    DsrdPhysHeight = _DsrdPhysHeight;
 }
 
 function changeRangeValue(delta) {
