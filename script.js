@@ -31,7 +31,7 @@ const CtrlErrorField = document.getElementById('ctrl_error');
 
 let currentMode = 'manual'; // Default mode
 
-let DsrdPhysHeight = 500;
+let DsrdPhysHeight = 100;
 let DsrdPhysHeight_Lval = DsrdPhysHeight;
 
 let CtrlIntegral = 0;
@@ -252,6 +252,8 @@ function gameLoop() {
     const PhysHeightError = DsrdPhysHeight - airplane.PhysHeight;
     const PhysVvertError = DsrdPhysVvert - airplane.PhysVvert;
 
+    CtrlStates.PosError = PhysHeightError;
+
     if ('auto' == currentMode) {
         let uk = CalcCtrl(PhysHeightError, PhysVvertError, deltaTime);
         // Ensure the new value is within the range limits
@@ -272,6 +274,20 @@ function gameLoop() {
     drawAirplane();
     update(deltaTime);
     updateCtrlStates();
+
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+        let xPixel = getPixelXPosition(-5 + i, MaxTimeFrame, canvas.width);
+        let yPixel = getPixelYPosition(100, PhysHeightMax, GndHeight, canvas.height, 0);
+        if (0 == i) {
+            ctx.moveTo(xPixel, yPixel);
+        } else {
+            ctx.lineTo(xPixel, yPixel);
+        }
+    }
+    ctx.strokeStyle = 'green';
+    ctx.lineWidth = 1;
+    ctx.stroke();
 
     requestAnimationFrame(gameLoop);
 }
@@ -370,7 +386,7 @@ function updateCtrlStates() {
     if (isNaN(CtrlStates.PosError)) {
         CtrlErrorField.innerText = '-';
     } else {
-        CtrlErrorField.innerText = CtrlStates.PosError + ' m';
+        CtrlErrorField.innerText = CtrlStates.PosError.toFixed(2) + ' m';
     }
 }
 

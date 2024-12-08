@@ -127,12 +127,13 @@ h1 {
 }
 
 .ControlStatesFields div {
-    padding: 5px;
+    padding: 2px;
     border: none;
     /*background-color: #ccc;*/
-    width: 20px;
+    width: 70px;
     border-radius: 5px;
     box-sizing: border-box;
+    white-space: nowrap;
 }
 
 .manual_controll {
