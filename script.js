@@ -6,6 +6,8 @@ const MaxTimeFrame = 60; // Number of seconds to future and past [s] / therefore
 
 const uMax = 1; // Min/Max [m/s^2]
 
+const Speedfactor = 10;
+
 let u = 0; // Initial input [m/s^2]
 
 let t = 0;
@@ -230,7 +232,7 @@ function drawBackground() {
 /* Main loop for the game */
 function gameLoop() {
     const now = performance.now();
-    const deltaTime = (now - lastFrameTime) / 1000; // Convert to seconds
+    const deltaTime = (now - lastFrameTime) / 1000 * Speedfactor; // Convert to seconds
     lastFrameTime = now;
 
     if ('auto' == currentMode) {
