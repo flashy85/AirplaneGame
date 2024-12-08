@@ -26,6 +26,9 @@ const InDsrdHeightField = document.getElementById('in_DesiredHeight');
 const canvas = document.getElementById('GameArea');
 const ctx = canvas.getContext('2d');
 
+// Controller states
+const CtrlErrorField = document.getElementById('ctrl_error');
+
 let currentMode = 'manual'; // Default mode
 
 let DsrdPhysHeight = 500;
@@ -55,6 +58,11 @@ airplane.img.src = 'airplane.png';
 let refpath = {
     color: 'red',
     path: []
+}
+
+let CtrlStates = {
+    PosError: NaN,
+    VelError: NaN
 }
 
 let backgroundX = 0; // Movement of background
@@ -235,9 +243,16 @@ function gameLoop() {
     const deltaTime = (now - lastFrameTime) / 1000 * Speedfactor; // Convert to seconds
     lastFrameTime = now;
 
+    let DsrdPhysVvert = (DsrdPhysHeight_Lval - DsrdPhysHeight) / deltaTime;
+    DsrdPhysHeight_Lval = DsrdPhysHeight;
+
+    //CtrlStates.PosError = 0;
+    //CtrlStates.VelError = 0;
+
+    const PhysHeightError = DsrdPhysHeight - airplane.PhysHeight;
+    const PhysVvertError = DsrdPhysVvert - airplane.PhysVvert;
+
     if ('auto' == currentMode) {
-        let DsrdPhysVvert = (DsrdPhysHeight_Lval - DsrdPhysHeight) / deltaTime;
-        DsrdPhysHeight_Lval = DsrdPhysHeight;
         let uk = CalcCtrl(airplane.PhysHeight, airplane.PhysVvert, DsrdPhysHeight, DsrdPhysVvert, deltaTime);
         // Ensure the new value is within the range limits
         uk = Math.max(rangeInput.min, Math.min(uk, rangeInput.max));
@@ -256,6 +271,7 @@ function gameLoop() {
     drawPath();
     drawAirplane();
     update(deltaTime);
+    updateCtrlStates();
 
     requestAnimationFrame(gameLoop);
 }
@@ -329,7 +345,7 @@ function getPixelYPosition(physicalY, physHeight, gndHeight, gameAreaHeight, air
     return invertedY;
 }
 
-function CalcCtrl(PhysHeight, PhysVvert, _DsrdPhysHeight, DsrdPhysVvert, deltaTime) {
+function CalcCtrl(HeightError, VvertError, deltaTime) {
     const inputField_Ctrl_P = document.getElementById('P_ctrl');
     const inputField_Ctrl_I = document.getElementById('I_ctrl');
     const inputField_Ctrl_D = document.getElementById('D_ctrl');
@@ -345,11 +361,17 @@ function CalcCtrl(PhysHeight, PhysVvert, _DsrdPhysHeight, DsrdPhysVvert, deltaTi
     if (isNaN(Ctrl_D)) {
         Ctrl_D = 0;
     }
-    const PhysHeightError = _DsrdPhysHeight - PhysHeight;
-    const PhysVvertError = DsrdPhysVvert - PhysVvert;
-    CtrlIntegral += PhysHeightError * deltaTime;
-    uk = PhysHeightError * Ctrl_P + PhysVvertError * Ctrl_D + CtrlIntegral * Ctrl_I;
+    CtrlIntegral += HeightError * deltaTime;
+    uk = HeightError * Ctrl_P + VvertError * Ctrl_D + CtrlIntegral * Ctrl_I;
     return uk;
+}
+
+function updateCtrlStates() {
+    if (isNaN(CtrlStates.PosError)) {
+        CtrlErrorField.innerText = '-';
+    } else {
+        CtrlErrorField.innerText = CtrlStates.PosError + ' m';
+    }
 }
 
 /*
