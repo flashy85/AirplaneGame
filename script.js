@@ -253,7 +253,7 @@ function gameLoop() {
     const PhysVvertError = DsrdPhysVvert - airplane.PhysVvert;
 
     if ('auto' == currentMode) {
-        let uk = CalcCtrl(airplane.PhysHeight, airplane.PhysVvert, DsrdPhysHeight, DsrdPhysVvert, deltaTime);
+        let uk = CalcCtrl(PhysHeightError, PhysVvertError, deltaTime);
         // Ensure the new value is within the range limits
         uk = Math.max(rangeInput.min, Math.min(uk, rangeInput.max));
         rangeInput.value = uk.toFixed(2);
