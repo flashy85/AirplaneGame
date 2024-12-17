@@ -169,7 +169,7 @@ function drawRefPath(path, color) {
         for (let i = 0; i < path.length; i++) {
             let point = path[i];
             let xPixel = getPixelXPosition(point.time, MaxTimeFrame, canvas.width);
-            let yPixel = getPixelYPosition(point.y, PhysHeightMax, GndHeight, canvas.height, 2);
+            let yPixel = getPixelYPosition(point.y, PhysHeightMax, GndHeight, canvas.height, 0);
             if (0 == i) {
                 ctx.moveTo(xPixel, yPixel);
             } else {
@@ -188,6 +188,9 @@ function drawAirplane() {
     ctx.scale(-1, 1); // mirror image
     ctx.drawImage(airplane.img, -airplane.scaledWidth / 2, -airplane.scaleHeight / 2, airplane.scaledWidth, airplane.scaleHeight);
     ctx.restore();
+
+    ctx.fillStyle = "red";
+    ctx.fillRect(airplane.x + airplane.scaledWidth / 2 - 5, airplane.y + airplane.scaleHeight / 2 - 5, 10, 10);
 }
 
 function drawPath() {
@@ -351,11 +354,12 @@ function getPixelXPosition(_Time, _MaxTimeFrame, _CanvasWidth) {
     return xPos;
 }
 
-function getPixelYPosition(physicalY, physHeight, gndHeight, gameAreaHeight, airplaneHeight) {
+function getPixelYPosition(physicalY, physHeightMax, gndHeight, gameAreaHeight, airplaneHeight) {
     // Calculate the pixels per meter scaling factor 
-    const pixelsPerMeter = (gameAreaHeight - airplaneHeight) / physHeight;
+    /*const pixelsPerMeter = (gameAreaHeight - airplaneHeight) / physHeight;*/
+    const pixelsPerMeter = (gameAreaHeight) / physHeightMax;
     // Calculate the browser Y position in pixels 
-    const browserY = (physicalY + gndHeight) * pixelsPerMeter;
+    const browserY = (physicalY) * pixelsPerMeter - airplaneHeight / 2;
     // Invert the Y position because browser coordinates are top-down 
     const invertedY = gameAreaHeight - browserY - airplaneHeight;
     return invertedY;
@@ -389,14 +393,3 @@ function updateCtrlStates() {
         CtrlErrorField.innerText = CtrlStates.PosError.toFixed(2) + ' m';
     }
 }
-
-/*
-function getPixelXPosition(physicalX, physWidth) {
-    let gameAreaWidth = GameArea.clientWidth;
-    let airplaneWidth = Airplane.clientWidth;
-    // Calculate the pixels per meter scaling factor 
-    const pixelsPerMeter = (gameAreaWidth - airplaneWidth) / physWidth;
-    // Calculate the browser X position in pixels 
-    return physicalX * pixelsPerMeter;
-}
-    */
