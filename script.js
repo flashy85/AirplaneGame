@@ -186,9 +186,6 @@ function drawAirplane() {
     ctx.scale(-1, 1); // mirror image
     ctx.drawImage(airplane.img, -airplane.scaledWidth / 2, -airplane.scaleHeight / 2, airplane.scaledWidth, airplane.scaleHeight);
     ctx.restore();
-
-    ctx.fillStyle = "red";
-    ctx.fillRect(airplane.x + airplane.scaledWidth / 2 - 5, airplane.y + airplane.scaleHeight / 2 - 5, 10, 10);
 }
 
 function drawPath() {
@@ -286,9 +283,6 @@ function gameLoop() {
             ctx.lineTo(xPixel, yPixel);
         }
     }
-    ctx.strokeStyle = 'green';
-    ctx.lineWidth = 1;
-    ctx.stroke();
 
     requestAnimationFrame(gameLoop);
 }
