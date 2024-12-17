@@ -1,6 +1,6 @@
 /* Physical size */
 const PhysHeightMax = 1000; // Maximal physical height [m]
-const GndHeight = 100; // Ground height [m]
+const GndHeight = 150; // Ground height [m]
 const PhysWidth = 1000; // Maximal physical width [m]
 const MaxTimeFrame = 60; // Number of seconds to future and past [s] / therefore twice this parameter in total
 
@@ -145,7 +145,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 })
 
-// Function to draw a straight line
 /*    
     function drawSineWave() {
         ctx.beginPath();
@@ -160,7 +159,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
             }
             */
 // Draw the desired trajectory (uncomment one of the following lines)
-//drawLine();
 //drawSineWave();
 
 function drawRefPath(path, color) {
