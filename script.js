@@ -1,9 +1,12 @@
 /* Physical size */
 const PhysHeightMax = 1000; // Maximal physical height [m]
-const GndHeight = 100; // Ground height [m]
+const GndHeight = 150; // Ground height [m]
 const PhysWidth = 1000; // Maximal physical width [m]
+const MaxTimeFrame = 60; // Number of seconds to future and past [s] / therefore twice this parameter in total
 
 const uMax = 1; // Min/Max [m/s^2]
+
+const Speedfactor = 10;
 
 let u = 0; // Initial input [m/s^2]
 
@@ -23,9 +26,14 @@ const InDsrdHeightField = document.getElementById('in_DesiredHeight');
 const canvas = document.getElementById('GameArea');
 const ctx = canvas.getContext('2d');
 
+// Controller states
+const CtrlErrorField = document.getElementById('ctrl_error');
+
 let currentMode = 'manual'; // Default mode
 
-let DsrdPhysHeight = 500;
+let DsrdPhysHeightSet = GndHeight;
+
+let DsrdPhysHeight = DsrdPhysHeightSet;
 let DsrdPhysHeight_Lval = DsrdPhysHeight;
 
 let CtrlIntegral = 0;
@@ -47,6 +55,16 @@ let airplane = {
     path: []
 };
 airplane.img.src = 'airplane.png';
+
+let refpath = {
+    color: 'red',
+    path: []
+}
+
+let CtrlStates = {
+    PosError: NaN,
+    VelError: NaN
+}
 
 let backgroundX = 0; // Movement of background
 
@@ -128,17 +146,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
 })
 
-// Function to draw a straight line
-/*
-function drawLine() {
-    ctx.beginPath();
-    ctx.moveTo(0, canvas.height / 2);
-    ctx.lineTo(canvas.width, canvas.height / 2);
-    ctx.strokeStyle = 'red';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    }
-    
+/*    
     function drawSineWave() {
         ctx.beginPath();
         ctx.moveTo(0, canvas.height / 2);
@@ -152,44 +160,64 @@ function drawLine() {
             }
             */
 // Draw the desired trajectory (uncomment one of the following lines)
-//drawLine();
 //drawSineWave();
 
-function drawAirplane() {
-    ctx.save();
-    ctx.translate(airplane.x + airplane.scaledWidth / 2, airplane.y + airplane.scaleHeight / 2);
-    ctx.scale(-1, 1); // mirror image
-    ctx.drawImage(airplane.img, -airplane.scaledWidth / 2, -airplane.scaleHeight / 2, airplane.scaledWidth, airplane.scaleHeight);
-    ctx.restore();
-}
-
-function drawPath() {
-    if (airplane.path.length > 1) {
+function drawPath(path, color) {
+    if (path.length > 1) {
         ctx.beginPath();
-        ctx.moveTo(airplane.path[0].x, airplane.path[0].y);
-        for (let i = 1; i < airplane.path.length; i++) {
-            ctx.lineTo(airplane.path[i].x, airplane.path[i].y);
+        for (let i = 0; i < path.length; i++) {
+            let point = path[i];
+            let xPixel = getPixelXPosition(point.time, MaxTimeFrame, canvas.width);
+            let yPixel = getPixelYPosition(point.y, PhysHeightMax, GndHeight, canvas.height, 0);
+            if (0 == i) {
+                ctx.moveTo(xPixel, yPixel);
+            } else {
+                ctx.lineTo(xPixel, yPixel);
+            }
         }
-        ctx.strokeStyle = 'blue';
+        ctx.strokeStyle = color;
         ctx.lineWidth = 2;
         ctx.stroke();
     }
 }
 
+function drawAirplane() {
+    ctx.save();
+    ctx.translate(airplane.x, airplane.y);
+    ctx.scale(-1, 1); // mirror image
+    ctx.drawImage(airplane.img, -airplane.scaledWidth / 2, -airplane.scaleHeight / 2, airplane.scaledWidth, airplane.scaleHeight);
+    ctx.restore();
+
+}
+
 /* Update all positions for next step */
 function update(deltaTime) {
-    backgroundX -= airplane.speed * (deltaTime * 1000 / 16);
+    backgroundX -= airplane.speed * (deltaTime * 1000);
     if (backgroundX <= -canvas.width) {
         backgroundX = 0;
     }
     // Update airplane path relativ to background movement
-    for (let i = 0; i < airplane.path.length; i++) {
-        airplane.path[i].x -= airplane.speed * (deltaTime * 1000 / 16);
+    if (airplane.path.length > 1) {
+        for (let i = 0; i < airplane.path.length; i++) {
+            airplane.path[i].time -= deltaTime;
+        }
+        if (airplane.path[0].time < -MaxTimeFrame) {
+            airplane.path.shift();
+        }
     }
-    airplane.path.push({ x: airplane.x + airplane.scaledWidth / 2, y: airplane.y + airplane.scaleHeight / 2 })
-    if (airplane.path.length > 130) {
-        airplane.path.shift();
+    airplane.path.push({ time: 0, y: airplane.PhysHeight })
+
+    // Update reference path relative to movement
+    if (refpath.path.length > 1) {
+        for (let i = 0; i < refpath.path.length; i++) {
+            refpath.path[i].time -= deltaTime;
+        }
+        if (refpath.path[0].time < -MaxTimeFrame) {
+            refpath.path.shift();
+        }
     }
+    // Add new value for reference path
+    refpath.path.push({ time: MaxTimeFrame, y: DsrdPhysHeightSet });
 }
 
 function drawBackground() {
@@ -202,12 +230,19 @@ function drawBackground() {
 /* Main loop for the game */
 function gameLoop() {
     const now = performance.now();
-    const deltaTime = (now - lastFrameTime) / 1000; // Convert to seconds
+    const deltaTime = (now - lastFrameTime) / 1000 * Speedfactor; // Convert to seconds
     lastFrameTime = now;
 
+    let DsrdPhysVvert = (DsrdPhysHeight_Lval - DsrdPhysHeight) / deltaTime;
+    DsrdPhysHeight_Lval = DsrdPhysHeight;
+
+    const PhysHeightError = DsrdPhysHeight - airplane.PhysHeight;
+    const PhysVvertError = DsrdPhysVvert - airplane.PhysVvert;
+
+    CtrlStates.PosError = PhysHeightError;
+
     if ('auto' == currentMode) {
-        let DsrdPhysVvert = (DsrdPhysHeight_Lval - DsrdPhysHeight) / deltaTime;
-        let uk = CalcCtrl(airplane.PhysHeight, airplane.PhysVvert, DsrdPhysHeight, DsrdPhysVvert, deltaTime);
+        let uk = CalcCtrl(PhysHeightError, PhysVvertError, deltaTime);
         // Ensure the new value is within the range limits
         uk = Math.max(rangeInput.min, Math.min(uk, rangeInput.max));
         rangeInput.value = uk.toFixed(2);
@@ -217,13 +252,16 @@ function gameLoop() {
     airplane.PhysHeight = Math.max(Math.min(ret.y, PhysHeightMax - 100), GndHeight);
     airplane.PhysVvert = ret.v;
 
-    airplane.y = getPixelYPosition(airplane.PhysHeight, PhysHeightMax, GndHeight, canvas.height, airplane.scaleHeight);
+    airplane.y = getPixelYPosition(airplane.PhysHeight, PhysHeightMax, GndHeight, canvas.height, 0);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
-    drawPath();
+    drawPath(refpath.path, refpath.color);
+    drawPath(airplane.path, 'blue');
     drawAirplane();
+    updateDesiredPos(refpath.path);
     update(deltaTime);
+    updateCtrlStates();
 
     requestAnimationFrame(gameLoop);
 }
@@ -246,14 +284,16 @@ function readRangeValue() {
 
 // Read desired height
 function readDesiredHeight() {
-    const value = InDsrdHeightField.value;
-    if (isNaN(value)) {
-        value = DsrdPhysHeight;
+    let value = InDsrdHeightField.value;
+    if (isNaN(value) || value.trim() === "") {
+        value = DsrdPhysHeightSet;
+        InDsrdHeightField.value = DsrdPhysHeightSet;
     }
-    let _DsrdPhysHeight = Math.max(GndHeight, Math.min(parseFloat(value), PhysHeightMax));
-    if (_DsrdPhysHeight != value) {
-        InDsrdHeightField.value = DsrdPhysHeight;
+    let _DsrdPhysHeightSet = Math.max(GndHeight, Math.min(parseFloat(value), PhysHeightMax));
+    if (_DsrdPhysHeightSet != value) {
+        InDsrdHeightField.value = DsrdPhysHeightSet;
     }
+    DsrdPhysHeightSet = _DsrdPhysHeightSet;
 }
 
 function changeRangeValue(delta) {
@@ -279,17 +319,24 @@ function setMode(mode) {
     }
 }
 
-function getPixelYPosition(physicalY, physHeight, gndHeight, gameAreaHeight, airplaneHeight) {
+function getPixelXPosition(_Time, _MaxTimeFrame, _CanvasWidth) {
+    const pixelsPerSecond = _CanvasWidth / (2 * _MaxTimeFrame);
+    const xPos = (_Time + _MaxTimeFrame) * pixelsPerSecond;
+    return xPos;
+}
+
+function getPixelYPosition(physicalY, physHeightMax, gndHeight, gameAreaHeight, airplaneHeight) {
     // Calculate the pixels per meter scaling factor 
-    const pixelsPerMeter = (gameAreaHeight - airplaneHeight) / physHeight;
+    /*const pixelsPerMeter = (gameAreaHeight - airplaneHeight) / physHeight;*/
+    const pixelsPerMeter = (gameAreaHeight) / physHeightMax;
     // Calculate the browser Y position in pixels 
-    const browserY = (physicalY + gndHeight) * pixelsPerMeter;
+    const browserY = (physicalY) * pixelsPerMeter - airplaneHeight / 2;
     // Invert the Y position because browser coordinates are top-down 
     const invertedY = gameAreaHeight - browserY - airplaneHeight;
     return invertedY;
 }
 
-function CalcCtrl(PhysHeight, PhysVvert, DsrdPhysHeight, DsrdPhysVvert, deltaTime) {
+function CalcCtrl(HeightError, VvertError, deltaTime) {
     const inputField_Ctrl_P = document.getElementById('P_ctrl');
     const inputField_Ctrl_I = document.getElementById('I_ctrl');
     const inputField_Ctrl_D = document.getElementById('D_ctrl');
@@ -305,20 +352,29 @@ function CalcCtrl(PhysHeight, PhysVvert, DsrdPhysHeight, DsrdPhysVvert, deltaTim
     if (isNaN(Ctrl_D)) {
         Ctrl_D = 0;
     }
-    const PhysHeightError = DsrdPhysHeight - PhysHeight;
-    const PhysVvertError = DsrdPhysVvert - PhysVvert;
-    CtrlIntegral += PhysHeightError * deltaTime;
-    uk = PhysHeightError * Ctrl_P + PhysVvertError * Ctrl_D + CtrlIntegral * Ctrl_I;
+    CtrlIntegral += HeightError * deltaTime;
+    uk = HeightError * Ctrl_P + VvertError * Ctrl_D + CtrlIntegral * Ctrl_I;
     return uk;
 }
 
-/*
-function getPixelXPosition(physicalX, physWidth) {
-    let gameAreaWidth = GameArea.clientWidth;
-    let airplaneWidth = Airplane.clientWidth;
-    // Calculate the pixels per meter scaling factor 
-    const pixelsPerMeter = (gameAreaWidth - airplaneWidth) / physWidth;
-    // Calculate the browser X position in pixels 
-    return physicalX * pixelsPerMeter;
+function updateCtrlStates() {
+    if (isNaN(CtrlStates.PosError)) {
+        CtrlErrorField.innerText = '-';
+    } else {
+        CtrlErrorField.innerText = CtrlStates.PosError.toFixed(2) + ' m';
+    }
 }
-    */
+
+function updateDesiredPos(_refpath) {
+    let closestY = null;
+
+    for (let i = 0; i < _refpath.length; i++) {
+        if (_refpath[i].time < 0) {
+            closestY = _refpath[i].y;
+        }
+    }
+
+    if (closestY != null) {
+        DsrdPhysHeight = closestY;
+    }
+}
