@@ -31,7 +31,9 @@ const CtrlErrorField = document.getElementById('ctrl_error');
 
 let currentMode = 'manual'; // Default mode
 
-let DsrdPhysHeight = 100;
+let DsrdPhysHeightSet = GndHeight;
+
+let DsrdPhysHeight = DsrdPhysHeightSet;
 let DsrdPhysHeight_Lval = DsrdPhysHeight;
 
 let CtrlIntegral = 0;
@@ -50,7 +52,6 @@ let airplane = {
     imgHeight: 0,
     scaledWidth: 100, // Desired width for image
     scaleHeight: 0, // height for image (will be calculated)
-    time: [],
     path: []
 };
 airplane.img.src = 'airplane.png';
@@ -161,7 +162,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 // Draw the desired trajectory (uncomment one of the following lines)
 //drawSineWave();
 
-function drawRefPath(path, color) {
+function drawPath(path, color) {
     if (path.length > 1) {
         ctx.beginPath();
         for (let i = 0; i < path.length; i++) {
@@ -182,41 +183,32 @@ function drawRefPath(path, color) {
 
 function drawAirplane() {
     ctx.save();
-    ctx.translate(airplane.x + airplane.scaledWidth / 2, airplane.y + airplane.scaleHeight / 2);
+    ctx.translate(airplane.x, airplane.y);
     ctx.scale(-1, 1); // mirror image
     ctx.drawImage(airplane.img, -airplane.scaledWidth / 2, -airplane.scaleHeight / 2, airplane.scaledWidth, airplane.scaleHeight);
     ctx.restore();
-}
 
-function drawPath() {
-    if (airplane.path.length > 1) {
-        ctx.beginPath();
-        ctx.moveTo(airplane.path[0].x, airplane.path[0].y);
-        for (let i = 1; i < airplane.path.length; i++) {
-            ctx.lineTo(airplane.path[i].x, airplane.path[i].y);
-        }
-        ctx.strokeStyle = 'blue';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-    }
 }
 
 /* Update all positions for next step */
 function update(deltaTime) {
-    backgroundX -= airplane.speed * (deltaTime * 1000 / 16);
+    backgroundX -= airplane.speed * (deltaTime * 1000);
     if (backgroundX <= -canvas.width) {
         backgroundX = 0;
     }
     // Update airplane path relativ to background movement
-    for (let i = 0; i < airplane.path.length; i++) {
-        airplane.path[i].x -= airplane.speed * (deltaTime * 1000 / 16);
+    if (airplane.path.length > 1) {
+        for (let i = 0; i < airplane.path.length; i++) {
+            airplane.path[i].time -= deltaTime;
+        }
+        if (airplane.path[0].time < -MaxTimeFrame) {
+            airplane.path.shift();
+        }
     }
-    airplane.path.push({ x: airplane.x + airplane.scaledWidth / 2, y: airplane.y + airplane.scaleHeight / 2 })
-    if (airplane.path.length > 130) {
-        airplane.path.shift();
-    }
+    airplane.path.push({ time: 0, y: airplane.PhysHeight })
+
+    // Update reference path relative to movement
     if (refpath.path.length > 1) {
-        // Update reference path
         for (let i = 0; i < refpath.path.length; i++) {
             refpath.path[i].time -= deltaTime;
         }
@@ -225,7 +217,7 @@ function update(deltaTime) {
         }
     }
     // Add new value for reference path
-    refpath.path.push({ time: MaxTimeFrame, y: DsrdPhysHeight });
+    refpath.path.push({ time: MaxTimeFrame, y: DsrdPhysHeightSet });
 }
 
 function drawBackground() {
@@ -244,9 +236,6 @@ function gameLoop() {
     let DsrdPhysVvert = (DsrdPhysHeight_Lval - DsrdPhysHeight) / deltaTime;
     DsrdPhysHeight_Lval = DsrdPhysHeight;
 
-    //CtrlStates.PosError = 0;
-    //CtrlStates.VelError = 0;
-
     const PhysHeightError = DsrdPhysHeight - airplane.PhysHeight;
     const PhysVvertError = DsrdPhysVvert - airplane.PhysVvert;
 
@@ -263,26 +252,16 @@ function gameLoop() {
     airplane.PhysHeight = Math.max(Math.min(ret.y, PhysHeightMax - 100), GndHeight);
     airplane.PhysVvert = ret.v;
 
-    airplane.y = getPixelYPosition(airplane.PhysHeight, PhysHeightMax, GndHeight, canvas.height, airplane.scaleHeight);
+    airplane.y = getPixelYPosition(airplane.PhysHeight, PhysHeightMax, GndHeight, canvas.height, 0);
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
-    drawRefPath(refpath.path, refpath.color);
-    drawPath();
+    drawPath(refpath.path, refpath.color);
+    drawPath(airplane.path, 'blue');
     drawAirplane();
+    updateDesiredPos(refpath.path);
     update(deltaTime);
     updateCtrlStates();
-
-    ctx.beginPath();
-    for (let i = 0; i < 10; i++) {
-        let xPixel = getPixelXPosition(-5 + i, MaxTimeFrame, canvas.width);
-        let yPixel = getPixelYPosition(100, PhysHeightMax, GndHeight, canvas.height, 0);
-        if (0 == i) {
-            ctx.moveTo(xPixel, yPixel);
-        } else {
-            ctx.lineTo(xPixel, yPixel);
-        }
-    }
 
     requestAnimationFrame(gameLoop);
 }
@@ -307,14 +286,14 @@ function readRangeValue() {
 function readDesiredHeight() {
     let value = InDsrdHeightField.value;
     if (isNaN(value) || value.trim() === "") {
-        value = DsrdPhysHeight;
-        InDsrdHeightField.value = DsrdPhysHeight;
+        value = DsrdPhysHeightSet;
+        InDsrdHeightField.value = DsrdPhysHeightSet;
     }
-    let _DsrdPhysHeight = Math.max(GndHeight, Math.min(parseFloat(value), PhysHeightMax));
-    if (_DsrdPhysHeight != value) {
-        InDsrdHeightField.value = DsrdPhysHeight;
+    let _DsrdPhysHeightSet = Math.max(GndHeight, Math.min(parseFloat(value), PhysHeightMax));
+    if (_DsrdPhysHeightSet != value) {
+        InDsrdHeightField.value = DsrdPhysHeightSet;
     }
-    DsrdPhysHeight = _DsrdPhysHeight;
+    DsrdPhysHeightSet = _DsrdPhysHeightSet;
 }
 
 function changeRangeValue(delta) {
@@ -383,5 +362,19 @@ function updateCtrlStates() {
         CtrlErrorField.innerText = '-';
     } else {
         CtrlErrorField.innerText = CtrlStates.PosError.toFixed(2) + ' m';
+    }
+}
+
+function updateDesiredPos(_refpath) {
+    let closestY = null;
+
+    for (let i = 0; i < _refpath.length; i++) {
+        if (_refpath[i].time < 0) {
+            closestY = _refpath[i].y;
+        }
+    }
+
+    if (closestY != null) {
+        DsrdPhysHeight = closestY;
     }
 }
