@@ -6,7 +6,7 @@ const MaxTimeFrame = 60; // Number of seconds to future and past [s] / therefore
 
 const uMax = 1; // Min/Max [m/s^2]
 
-const Speedfactor = 10;
+const Speedfactor = 5;
 
 let u = 0; // Initial input [m/s^2]
 
@@ -336,6 +336,29 @@ function getPixelYPosition(physicalY, physHeightMax, gndHeight, gameAreaHeight, 
     return invertedY;
 }
 
+function calculateRotationAngle(path) {
+    if (path.length < 2) return 0; // Not enough points to calculate angle
+
+    let point1 = path[path.length - 2];
+    let point2 = path[path.length - 1];
+
+    let deltaX = getPixelXPosition(point2.time, MaxTimeFrame, canvas.width) - getPixelXPosition(point1.time, MaxTimeFrame, canvas.width);
+    let deltaY = getPixelYPosition(point2.y, PhysHeightMax, GndHeight, canvas.height, 0) - getPixelYPosition(point1.y, PhysHeightMax, GndHeight, canvas.height, 0);
+
+    let angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI; // Convert radians to degrees
+
+    return angle;
+}
+
+function drawAirplane() {
+    ctx.save();
+    ctx.translate(airplane.x, airplane.y);
+    let angle = calculateRotationAngle(airplane.path);
+    ctx.rotate(angle * Math.PI / 180); // Convert degrees to radians
+    ctx.scale(-1, 1); // mirror image
+    ctx.drawImage(airplane.img, -airplane.scaledWidth / 2, -airplane.scaleHeight / 2, airplane.scaledWidth, airplane.scaleHeight);
+    ctx.restore();
+}
 function CalcCtrl(HeightError, VvertError, deltaTime) {
     const inputField_Ctrl_P = document.getElementById('P_ctrl');
     const inputField_Ctrl_I = document.getElementById('I_ctrl');
