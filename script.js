@@ -11,7 +11,6 @@ const Speedfactor = 5;
 let u = 0; // Initial input [m/s^2]
 
 let t = 0;
-
 // Get the range input element by its ID
 const rangeInput = document.getElementById('btn_manctrl');
 const sliderValue = document.getElementById('sliderValue');
@@ -103,12 +102,12 @@ function CalcSmoothXpos(Xk, PhysWidth, t) {
     const L = Xend - X0; // maximum growth (final position)
     const k = 5; // Growth rate
     const xMid = tMax / 2;
-
+    
     // Logistic function formula
     const x = X0 + L / (1 + Math.exp(-k * (t - xMid) / tMax));
     return x;
-}
-*/
+    }
+    */
 
 document.addEventListener('DOMContentLoaded', (event) => {
     // Add an event listener to detect changes on the range input
@@ -147,18 +146,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
 })
 
 /*    
-    function drawSineWave() {
-        ctx.beginPath();
-        ctx.moveTo(0, canvas.height / 2);
-        for (let x = 0; x < canvas.width; x++) {
-            const y = canvas.height / 2 + 50 * Math.sin((x / canvas.width) * 4 * Math.PI);
-            ctx.lineTo(x, y);
-            }
-            ctx.strokeStyle = 'red';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            }
-            */
+function drawSineWave() {
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height / 2);
+    for (let x = 0; x < canvas.width; x++) {
+        const y = canvas.height / 2 + 50 * Math.sin((x / canvas.width) * 4 * Math.PI);
+        ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        }
+        */
 // Draw the desired trajectory (uncomment one of the following lines)
 //drawSineWave();
 
@@ -225,6 +224,7 @@ function drawBackground() {
     //ctx.drawImage(bg, backgroundX + canvas.width, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#87CEEB';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawGround();
 }
 
 /* Main loop for the game */
@@ -400,4 +400,10 @@ function updateDesiredPos(_refpath) {
     if (closestY != null) {
         DsrdPhysHeight = closestY;
     }
+}
+
+function drawGround() {
+    const groundY = getPixelYPosition(GndHeight - airplane.scaleHeight / 2, PhysHeightMax, GndHeight, canvas.height, 0);
+    ctx.fillStyle = '#654321'; // Brown color for the ground
+    ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
 }
