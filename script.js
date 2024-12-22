@@ -27,6 +27,7 @@ const ctx = canvas.getContext('2d');
 
 // Controller states
 const CtrlErrorField = document.getElementById('ctrl_error');
+const CtrlVelErrorField = document.getElementById('ctrl_vertical_speed_error');
 
 let currentMode = 'manual'; // Default mode
 
@@ -240,6 +241,7 @@ function gameLoop() {
     const PhysVvertError = DsrdPhysVvert - airplane.PhysVvert;
 
     CtrlStates.PosError = PhysHeightError;
+    CtrlStates.VelError = PhysVvertError;
 
     if ('auto' == currentMode) {
         let uk = CalcCtrl(PhysHeightError, PhysVvertError, deltaTime);
@@ -385,6 +387,11 @@ function updateCtrlStates() {
         CtrlErrorField.innerText = '-';
     } else {
         CtrlErrorField.innerText = CtrlStates.PosError.toFixed(2) + ' m';
+    }
+    if (isNaN(CtrlStates.VelError)) {
+        CtrlVelErrorField.innerText = '-';
+    } else {
+        CtrlVelErrorField.innerText = CtrlStates.VelError.toFixed(2) + ' m/s';
     }
 }
 
