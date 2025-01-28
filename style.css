@@ -238,36 +238,6 @@ h1 {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.button {
-    border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    /*margin: 4px 2px;*/
-    cursor: pointer;
-    /* Rounded corners */
-    border-radius: 5px;
-    /* smooth transition */
-    transition: background-color 0.3s ease;
-}
-
-.button-start {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.button-start:hover {
-    background-color: #45a049;
-}
-
-.button-stop {
-    background-color: #f44336;
-    color: white;
-}
-
-.button-stop:hover {
-    background-color: #e53935;
-}
-
 /* Button styling manual/auto */
 .button_switch {
     flex: 1;
