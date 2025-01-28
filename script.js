@@ -38,7 +38,7 @@ let DsrdPhysHeight_Lval = DsrdPhysHeight;
 
 let CtrlIntegral = 0;
 
-canvas.width = window.innerHeight;
+canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 let airplane = {
@@ -133,6 +133,13 @@ document.addEventListener('DOMContentLoaded', (event) => {
         gameLoop();
     }
 })
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerHeight;
+    canvas.height = window.innerHeight;
+    let aspectRatio = airplane.imgWidth / airplane.imgHeight;
+    airplane.scaleHeight = airplane.scaledWidth / aspectRatio;
+});
 
 /*    
 function drawSineWave() {
