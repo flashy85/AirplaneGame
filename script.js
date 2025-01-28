@@ -76,18 +76,6 @@ function updateModel(y_k, v_k, u_k, stepsize) {
     return { y: y_k1, v: v_k1 };
 }
 
-function toggleButtons() {
-    var startButton = document.getElementById('btn_start');
-    var stopButton = document.getElementById('btn_stop');
-    if (startButton.style.display === 'none') {
-        startButton.style.display = 'inline-block';
-        stopButton.style.display = 'none';
-    } else {
-        startButton.style.display = 'none';
-        stopButton.style.display = 'inline-block';
-    }
-}
-
 function getPhysicalYPosition(browserY, physHeight, gndHeight) {
     // Berechne die Pixel-zu-Meter-Skalierung 
     const pixelsPerMeter = (gameAreaHeight - airplaneHeight) / (physHeight + gndHeight);
