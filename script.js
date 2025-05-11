@@ -38,7 +38,7 @@ let DsrdPhysHeight_Lval = DsrdPhysHeight;
 
 let CtrlIntegral = 0;
 
-canvas.width = window.innerHeight;
+canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 let airplane = {
@@ -74,18 +74,6 @@ function updateModel(y_k, v_k, u_k, stepsize) {
     let y_k1 = y_k + v_k * stepsize;
     let v_k1 = v_k + u_k * stepsize;
     return { y: y_k1, v: v_k1 };
-}
-
-function toggleButtons() {
-    var startButton = document.getElementById('btn_start');
-    var stopButton = document.getElementById('btn_stop');
-    if (startButton.style.display === 'none') {
-        startButton.style.display = 'inline-block';
-        stopButton.style.display = 'none';
-    } else {
-        startButton.style.display = 'none';
-        stopButton.style.display = 'inline-block';
-    }
 }
 
 function getPhysicalYPosition(browserY, physHeight, gndHeight) {
@@ -145,6 +133,13 @@ document.addEventListener('DOMContentLoaded', (event) => {
         gameLoop();
     }
 })
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerHeight;
+    canvas.height = window.innerHeight;
+    let aspectRatio = airplane.imgWidth / airplane.imgHeight;
+    airplane.scaleHeight = airplane.scaledWidth / aspectRatio;
+});
 
 /*    
 function drawSineWave() {
