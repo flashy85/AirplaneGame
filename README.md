@@ -1,2 +1,2 @@
 # FlugzeugSpiel
-Game to learn about controller theory
+Game to learn about control theory
