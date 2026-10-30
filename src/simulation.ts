@@ -14,6 +14,11 @@ export interface PidResult {
     integralError: number;
 }
 
+export interface PidOutputLimits {
+    minimum: number;
+    maximum: number;
+}
+
 export function integrateFlight(
     state: FlightState,
     acceleration: number,
@@ -30,13 +35,26 @@ export function calculatePidOutput(
     verticalSpeedError: number,
     deltaTime: number,
     gains: PidGains,
-    integralError: number
+    integralError: number,
+    outputLimits: PidOutputLimits
 ): PidResult {
-    const nextIntegralError = integralError + heightError * deltaTime;
-    const output =
+    const candidateIntegralError = integralError + heightError * deltaTime;
+    const outputWithoutIntegral =
         heightError * gains.proportional
-        + verticalSpeedError * gains.derivative
-        + nextIntegralError * gains.integral;
+        + verticalSpeedError * gains.derivative;
+    const candidateOutput = outputWithoutIntegral + candidateIntegralError * gains.integral;
+    const integralContribution = (candidateIntegralError - integralError) * gains.integral;
+    const pushesPastLimit =
+        (candidateOutput > outputLimits.maximum && integralContribution > 0)
+        || (candidateOutput < outputLimits.minimum && integralContribution < 0);
+    const nextIntegralError = pushesPastLimit ? integralError : candidateIntegralError;
+    const output = Math.max(
+        outputLimits.minimum,
+        Math.min(
+            outputWithoutIntegral + nextIntegralError * gains.integral,
+            outputLimits.maximum
+        )
+    );
 
     return { output, integralError: nextIntegralError };
 }

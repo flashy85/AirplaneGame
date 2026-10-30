@@ -4,7 +4,8 @@ Ein kleines Spiel zum Lernen der Regelungstechnik.
 
 ## Aufbau
 
-- `src/main.ts` verbindet Spielzustand und Hauptschleife.
+- `src/main.ts` verbindet DOM und Module.
+- `src/game.ts` verwaltet Spielzustand und Hauptschleife.
 - `src/controls.ts` kapselt Eingaben und Bedienung.
 - `src/rendering.ts` zeichnet die Canvas-Szene.
 - `src/simulation.ts` enthält die unabhängigen Simulationsfunktionen.

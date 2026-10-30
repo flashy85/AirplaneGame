@@ -17,8 +17,35 @@ describe('calculatePidOutput', () => {
                 -2,
                 0.5,
                 { proportional: 3, integral: 2, derivative: 5 },
-                1
+                1,
+                { minimum: -10, maximum: 10 }
             )
         ).toEqual({ output: 8, integralError: 3 });
+    });
+
+    it('prevents integral windup at the output limit', () => {
+        expect(
+            calculatePidOutput(
+                2,
+                0,
+                1,
+                { proportional: 0, integral: 1, derivative: 0 },
+                0,
+                { minimum: -1, maximum: 1 }
+            )
+        ).toEqual({ output: 0, integralError: 0 });
+    });
+
+    it('allows the integral to unwind when error opposes saturation', () => {
+        expect(
+            calculatePidOutput(
+                -0.5,
+                0,
+                1,
+                { proportional: 0, integral: 1, derivative: 0 },
+                2,
+                { minimum: -1, maximum: 1 }
+            )
+        ).toEqual({ output: 1, integralError: 1.5 });
     });
 });

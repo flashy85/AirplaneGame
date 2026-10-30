@@ -134,14 +134,21 @@ export function createGameControls(): GameControls {
                 ));
             });
             document.addEventListener('keydown', (event) => {
-                if (currentMode !== 'manual') {
+                if (
+                    currentMode !== 'manual'
+                    || event.target instanceof HTMLElement
+                    && event.target.matches('input, select, textarea, button, [contenteditable="true"]')
+                ) {
                     return;
                 }
                 if (event.key === 'ArrowUp') {
                     changeManualInput(0.1);
                 } else if (event.key === 'ArrowDown') {
                     changeManualInput(-0.1);
+                } else {
+                    return;
                 }
+                event.preventDefault();
                 getCallbacks().onManualInputChange(readManualInput());
             });
             rangeInput.addEventListener('mouseup', () => rangeInput.blur());
