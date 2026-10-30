@@ -2,6 +2,16 @@
 
 Ein kleines Spiel zum Lernen der Regelungstechnik.
 
+## Aufbau
+
+- `src/main.ts` verbindet Spielzustand und Hauptschleife.
+- `src/controls.ts` kapselt Eingaben und Bedienung.
+- `src/rendering.ts` zeichnet die Canvas-Szene.
+- `src/simulation.ts` enthält die unabhängigen Simulationsfunktionen.
+
+Die Oberfläche bleibt zunächst bei HTML und Canvas; React ist für die aktuelle
+UI nicht erforderlich.
+
 ## Entwicklung
 
 ```sh
