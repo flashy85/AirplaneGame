@@ -1,4 +1,5 @@
 import { calculatePidOutput, integrateFlight } from './simulation';
+import { drawGameScene, getPixelYPosition, type AirplaneRenderState, type PathPoint } from './rendering';
 
 /* Physical size */
 const PhysHeightMax = 1000; // Maximal physical height [m]
@@ -11,23 +12,12 @@ const Speedfactor = 5;
 
 type GameMode = 'manual' | 'auto';
 
-interface PathPoint {
-    time: number;
-    y: number;
-}
-
-interface Airplane {
-    x: number;
-    y: number;
+interface Airplane extends AirplaneRenderState {
     PhysHeight: number;
     PhysVvert: number;
     speed: number;
-    img: HTMLImageElement;
     imgWidth: number;
     imgHeight: number;
-    scaledWidth: number;
-    scaleHeight: number;
-    path: PathPoint[];
 }
 
 function requireElement<T extends HTMLElement>(id: string): T {
@@ -114,20 +104,6 @@ let backgroundX = 0; // Movement of background
 
 let lastFrameTime = performance.now();
 
-/*
-function CalcSmoothXpos(Xk, PhysWidth, t) {
-    const tMax = 10; // Seconds
-    const Xend = GameArea.clientWidth / 2 - Airplane.clientWidth / 2;
-    const L = Xend - X0; // maximum growth (final position)
-    const k = 5; // Growth rate
-    const xMid = tMax / 2;
-    
-    // Logistic function formula
-    const x = X0 + L / (1 + Math.exp(-k * (t - xMid) / tMax));
-    return x;
-    }
-    */
-
 document.addEventListener('DOMContentLoaded', (event) => {
     // Add an event listener to detect changes on the range input
     rangeInput.addEventListener('input', readRangeValue);
@@ -171,41 +147,6 @@ window.addEventListener('resize', () => {
     airplane.scaleHeight = airplane.scaledWidth / aspectRatio;
 });
 
-/*    
-function drawSineWave() {
-    ctx.beginPath();
-    ctx.moveTo(0, canvas.height / 2);
-    for (let x = 0; x < canvas.width; x++) {
-        const y = canvas.height / 2 + 50 * Math.sin((x / canvas.width) * 4 * Math.PI);
-        ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        }
-        */
-// Draw the desired trajectory (uncomment one of the following lines)
-//drawSineWave();
-
-function drawPath(path: PathPoint[], color: string) {
-    if (path.length > 1) {
-        ctx.beginPath();
-        for (let i = 0; i < path.length; i++) {
-            let point = path[i];
-            let xPixel = getPixelXPosition(point.time, MaxTimeFrame, canvas.width);
-            let yPixel = getPixelYPosition(point.y, PhysHeightMax, GndHeight, canvas.height, 0);
-            if (0 == i) {
-                ctx.moveTo(xPixel, yPixel);
-            } else {
-                ctx.lineTo(xPixel, yPixel);
-            }
-        }
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-    }
-}
-
 /* Update all positions for next step */
 function update(deltaTime: number) {
     backgroundX -= airplane.speed * (deltaTime * 1000);
@@ -234,14 +175,6 @@ function update(deltaTime: number) {
     }
     // Add new value for reference path
     refpath.path.push({ time: MaxTimeFrame, y: DsrdPhysHeightSet });
-}
-
-function drawBackground() {
-    //ctx.drawImage(bg, backgroundX, 0, canvas.width, canvas.height);
-    //ctx.drawImage(bg, backgroundX + canvas.width, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#87CEEB';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    drawGround();
 }
 
 /* Main loop for the game */
@@ -276,11 +209,11 @@ function gameLoop() {
 
     airplane.y = getPixelYPosition(airplane.PhysHeight, PhysHeightMax, GndHeight, canvas.height, 0);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawBackground();
-    drawPath(refpath.path, refpath.color);
-    drawPath(airplane.path, 'blue');
-    drawAirplane();
+    drawGameScene(ctx, canvas, airplane, refpath.path, refpath.color, {
+        maxTimeFrame: MaxTimeFrame,
+        physicalHeightMax: PhysHeightMax,
+        groundHeight: GndHeight
+    });
     updateDesiredPos(refpath.path);
     update(deltaTime);
     updateCtrlStates();
@@ -344,52 +277,6 @@ function setMode(mode: GameMode) {
     }
 }
 
-function getPixelXPosition(_Time: number, _MaxTimeFrame: number, _CanvasWidth: number) {
-    const pixelsPerSecond = _CanvasWidth / (2 * _MaxTimeFrame);
-    const xPos = (_Time + _MaxTimeFrame) * pixelsPerSecond;
-    return xPos;
-}
-
-function getPixelYPosition(
-    physicalY: number,
-    physHeightMax: number,
-    gndHeight: number,
-    gameAreaHeight: number,
-    airplaneHeight: number
-) {
-    // Calculate the pixels per meter scaling factor 
-    /*const pixelsPerMeter = (gameAreaHeight - airplaneHeight) / physHeight;*/
-    const pixelsPerMeter = (gameAreaHeight) / physHeightMax;
-    // Calculate the browser Y position in pixels 
-    const browserY = (physicalY) * pixelsPerMeter - airplaneHeight / 2;
-    // Invert the Y position because browser coordinates are top-down 
-    const invertedY = gameAreaHeight - browserY - airplaneHeight;
-    return invertedY;
-}
-
-function calculateRotationAngle(path: PathPoint[]) {
-    if (path.length < 2) return 0; // Not enough points to calculate angle
-
-    let point1 = path[path.length - 2];
-    let point2 = path[path.length - 1];
-
-    let deltaX = getPixelXPosition(point2.time, MaxTimeFrame, canvas.width) - getPixelXPosition(point1.time, MaxTimeFrame, canvas.width);
-    let deltaY = getPixelYPosition(point2.y, PhysHeightMax, GndHeight, canvas.height, 0) - getPixelYPosition(point1.y, PhysHeightMax, GndHeight, canvas.height, 0);
-
-    let angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI; // Convert radians to degrees
-
-    return angle;
-}
-
-function drawAirplane() {
-    ctx.save();
-    ctx.translate(airplane.x, airplane.y);
-    let angle = calculateRotationAngle(airplane.path);
-    ctx.rotate(angle * Math.PI / 180); // Convert degrees to radians
-    ctx.scale(-1, 1); // mirror image
-    ctx.drawImage(airplane.img, -airplane.scaledWidth / 2, -airplane.scaleHeight / 2, airplane.scaledWidth, airplane.scaleHeight);
-    ctx.restore();
-}
 function CalcCtrl(HeightError: number, VvertError: number, deltaTime: number) {
     const inputField_Ctrl_P = requireElement<HTMLInputElement>('P_ctrl');
     const inputField_Ctrl_I = requireElement<HTMLInputElement>('I_ctrl');
@@ -442,10 +329,4 @@ function updateDesiredPos(_refpath: PathPoint[]) {
     if (closestY != null) {
         DsrdPhysHeight = closestY;
     }
-}
-
-function drawGround() {
-    const groundY = getPixelYPosition(GndHeight - airplane.scaleHeight / 2, PhysHeightMax, GndHeight, canvas.height, 0);
-    ctx.fillStyle = '#654321'; // Brown color for the ground
-    ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
 }
