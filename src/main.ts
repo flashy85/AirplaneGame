@@ -1,35 +1,79 @@
+import { calculatePidOutput, integrateFlight } from './simulation';
+
 /* Physical size */
 const PhysHeightMax = 1000; // Maximal physical height [m]
 const GndHeight = 150; // Ground height [m]
-const PhysWidth = 1000; // Maximal physical width [m]
 const MaxTimeFrame = 60; // Number of seconds to future and past [s] / therefore twice this parameter in total
 
 const uMax = 1; // Min/Max [m/s^2]
 
 const Speedfactor = 5;
 
+type GameMode = 'manual' | 'auto';
+
+interface PathPoint {
+    time: number;
+    y: number;
+}
+
+interface Airplane {
+    x: number;
+    y: number;
+    PhysHeight: number;
+    PhysVvert: number;
+    speed: number;
+    img: HTMLImageElement;
+    imgWidth: number;
+    imgHeight: number;
+    scaledWidth: number;
+    scaleHeight: number;
+    path: PathPoint[];
+}
+
+function requireElement<T extends HTMLElement>(id: string): T {
+    const element = document.getElementById(id);
+    if (!element) {
+        throw new Error(`Required element #${id} was not found`);
+    }
+    return element as T;
+}
+
+function requireSelector<T extends Element>(selector: string): T {
+    const element = document.querySelector(selector);
+    if (!element) {
+        throw new Error(`Required element ${selector} was not found`);
+    }
+    return element as T;
+}
+
+function requireCanvasContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
+    const context = canvas.getContext('2d');
+    if (!context) {
+        throw new Error('A 2D canvas context is not available');
+    }
+    return context;
+}
+
 let u = 0; // Initial input [m/s^2]
 
-let t = 0;
 // Get the range input element by its ID
-const rangeInput = document.getElementById('btn_manctrl');
-const sliderValue = document.getElementById('sliderValue');
-const manualControll = document.querySelector('.manual_controll');
+const rangeInput = requireElement<HTMLInputElement>('btn_manctrl');
+const sliderValue = requireElement<HTMLSpanElement>('sliderValue');
+const manualControll = requireSelector<HTMLElement>('.manual_controll');
 // Buttons for switch manual - auto
-const manualBtn = document.getElementById('manual_btn');
-const autoBtn = document.getElementById('auto_btn');
+const manualBtn = requireElement<HTMLButtonElement>('manual_btn');
+const autoBtn = requireElement<HTMLButtonElement>('auto_btn');
 // Reference Path
-const SelSzenario = document.getElementById('scenarioSelect');
-const InDsrdHeightField = document.getElementById('in_DesiredHeight');
+const InDsrdHeightField = requireElement<HTMLInputElement>('in_DesiredHeight');
 
-const canvas = document.getElementById('GameArea');
-const ctx = canvas.getContext('2d');
+const canvas = requireElement<HTMLCanvasElement>('GameArea');
+const ctx = requireCanvasContext(canvas);
 
 // Controller states
-const CtrlErrorField = document.getElementById('ctrl_error');
-const CtrlVelErrorField = document.getElementById('ctrl_vertical_speed_error');
+const CtrlErrorField = requireElement<HTMLDivElement>('ctrl_error');
+const CtrlVelErrorField = requireElement<HTMLDivElement>('ctrl_vertical_speed_error');
 
-let currentMode = 'manual'; // Default mode
+let currentMode: GameMode = 'manual'; // Default mode
 
 let DsrdPhysHeightSet = GndHeight;
 
@@ -41,7 +85,7 @@ let CtrlIntegral = 0;
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-let airplane = {
+let airplane: Airplane = {
     x: canvas.width / 2,
     y: canvas.height / 2,
     PhysHeight: GndHeight,
@@ -54,9 +98,9 @@ let airplane = {
     scaleHeight: 0, // height for image (will be calculated)
     path: []
 };
-airplane.img.src = 'airplane.png';
+airplane.img.src = new URL('../airplane.png', import.meta.url).href;
 
-let refpath = {
+const refpath: { color: string; path: PathPoint[] } = {
     color: 'red',
     path: []
 }
@@ -69,20 +113,6 @@ let CtrlStates = {
 let backgroundX = 0; // Movement of background
 
 let lastFrameTime = performance.now();
-
-function updateModel(y_k, v_k, u_k, stepsize) {
-    let y_k1 = y_k + v_k * stepsize;
-    let v_k1 = v_k + u_k * stepsize;
-    return { y: y_k1, v: v_k1 };
-}
-
-function getPhysicalYPosition(browserY, physHeight, gndHeight) {
-    // Berechne die Pixel-zu-Meter-Skalierung 
-    const pixelsPerMeter = (gameAreaHeight - airplaneHeight) / (physHeight + gndHeight);
-    // Berechne die physikalische Höhe in Metern 
-    const physicalY = (browserY / pixelsPerMeter) - gndHeight;
-    return physicalY;
-}
 
 /*
 function CalcSmoothXpos(Xk, PhysWidth, t) {
@@ -157,7 +187,7 @@ function drawSineWave() {
 // Draw the desired trajectory (uncomment one of the following lines)
 //drawSineWave();
 
-function drawPath(path, color) {
+function drawPath(path: PathPoint[], color: string) {
     if (path.length > 1) {
         ctx.beginPath();
         for (let i = 0; i < path.length; i++) {
@@ -176,17 +206,8 @@ function drawPath(path, color) {
     }
 }
 
-function drawAirplane() {
-    ctx.save();
-    ctx.translate(airplane.x, airplane.y);
-    ctx.scale(-1, 1); // mirror image
-    ctx.drawImage(airplane.img, -airplane.scaledWidth / 2, -airplane.scaleHeight / 2, airplane.scaledWidth, airplane.scaleHeight);
-    ctx.restore();
-
-}
-
 /* Update all positions for next step */
-function update(deltaTime) {
+function update(deltaTime: number) {
     backgroundX -= airplane.speed * (deltaTime * 1000);
     if (backgroundX <= -canvas.width) {
         backgroundX = 0;
@@ -241,13 +262,17 @@ function gameLoop() {
     if ('auto' == currentMode) {
         let uk = CalcCtrl(PhysHeightError, PhysVvertError, deltaTime);
         // Ensure the new value is within the range limits
-        uk = Math.max(rangeInput.min, Math.min(uk, rangeInput.max));
+        uk = Math.max(Number(rangeInput.min), Math.min(uk, Number(rangeInput.max)));
         rangeInput.value = uk.toFixed(2);
         readRangeValue();
     }
-    let ret = updateModel(airplane.PhysHeight, airplane.PhysVvert, u, deltaTime);
-    airplane.PhysHeight = Math.max(Math.min(ret.y, PhysHeightMax - 100), GndHeight);
-    airplane.PhysVvert = ret.v;
+    const nextFlightState = integrateFlight(
+        { height: airplane.PhysHeight, verticalSpeed: airplane.PhysVvert },
+        u,
+        deltaTime
+    );
+    airplane.PhysHeight = Math.max(Math.min(nextFlightState.height, PhysHeightMax - 100), GndHeight);
+    airplane.PhysVvert = nextFlightState.verticalSpeed;
 
     airplane.y = getPixelYPosition(airplane.PhysHeight, PhysHeightMax, GndHeight, canvas.height, 0);
 
@@ -267,11 +292,13 @@ function gameLoop() {
 function readRangeValue() {
     // Get the current value
     const value = rangeInput.value;
-    u = value * uMax;
+    u = Number(value) * uMax;
 
-    sliderValue.textContent = parseFloat(u).toFixed(2);
+    sliderValue.textContent = u.toFixed(2);
     /* Position the window along the vertical axes of the slider */
-    const percent = (rangeInput.value - rangeInput.min) / (rangeInput.max - rangeInput.min);
+    const min = Number(rangeInput.min);
+    const max = Number(rangeInput.max);
+    const percent = (Number(rangeInput.value) - min) / (max - min);
     const sliderHeight = rangeInput.offsetHeight;
     const valueHeight = sliderValue.offsetHeight;
     /* The padding of .manual_controll */
@@ -282,26 +309,27 @@ function readRangeValue() {
 // Read desired height
 function readDesiredHeight() {
     let value = InDsrdHeightField.value;
-    if (isNaN(value) || value.trim() === "") {
-        value = DsrdPhysHeightSet;
-        InDsrdHeightField.value = DsrdPhysHeightSet;
+    if (value.trim() === "" || Number.isNaN(Number(value))) {
+        value = String(DsrdPhysHeightSet);
+        InDsrdHeightField.value = value;
     }
-    let _DsrdPhysHeightSet = Math.max(GndHeight, Math.min(parseFloat(value), PhysHeightMax));
-    if (_DsrdPhysHeightSet != value) {
-        InDsrdHeightField.value = DsrdPhysHeightSet;
+    const requestedHeight = Number(value);
+    const desiredHeight = Math.max(GndHeight, Math.min(requestedHeight, PhysHeightMax));
+    if (desiredHeight !== requestedHeight) {
+        InDsrdHeightField.value = String(desiredHeight);
     }
-    DsrdPhysHeightSet = _DsrdPhysHeightSet;
+    DsrdPhysHeightSet = desiredHeight;
 }
 
-function changeRangeValue(delta) {
+function changeRangeValue(delta: number) {
     let newValue = parseFloat(rangeInput.value) + delta;
     // Ensure the new value is within the range limits
-    newValue = Math.max(rangeInput.min, Math.min(newValue, rangeInput.max));
+    newValue = Math.max(Number(rangeInput.min), Math.min(newValue, Number(rangeInput.max)));
     rangeInput.value = newValue.toFixed(2);
 }
 
 // Function to set the mode
-function setMode(mode) {
+function setMode(mode: GameMode) {
     currentMode = mode;
     if ('manual' == currentMode) {
         manualBtn.classList.add('active');
@@ -316,13 +344,19 @@ function setMode(mode) {
     }
 }
 
-function getPixelXPosition(_Time, _MaxTimeFrame, _CanvasWidth) {
+function getPixelXPosition(_Time: number, _MaxTimeFrame: number, _CanvasWidth: number) {
     const pixelsPerSecond = _CanvasWidth / (2 * _MaxTimeFrame);
     const xPos = (_Time + _MaxTimeFrame) * pixelsPerSecond;
     return xPos;
 }
 
-function getPixelYPosition(physicalY, physHeightMax, gndHeight, gameAreaHeight, airplaneHeight) {
+function getPixelYPosition(
+    physicalY: number,
+    physHeightMax: number,
+    gndHeight: number,
+    gameAreaHeight: number,
+    airplaneHeight: number
+) {
     // Calculate the pixels per meter scaling factor 
     /*const pixelsPerMeter = (gameAreaHeight - airplaneHeight) / physHeight;*/
     const pixelsPerMeter = (gameAreaHeight) / physHeightMax;
@@ -333,7 +367,7 @@ function getPixelYPosition(physicalY, physHeightMax, gndHeight, gameAreaHeight, 
     return invertedY;
 }
 
-function calculateRotationAngle(path) {
+function calculateRotationAngle(path: PathPoint[]) {
     if (path.length < 2) return 0; // Not enough points to calculate angle
 
     let point1 = path[path.length - 2];
@@ -356,10 +390,10 @@ function drawAirplane() {
     ctx.drawImage(airplane.img, -airplane.scaledWidth / 2, -airplane.scaleHeight / 2, airplane.scaledWidth, airplane.scaleHeight);
     ctx.restore();
 }
-function CalcCtrl(HeightError, VvertError, deltaTime) {
-    const inputField_Ctrl_P = document.getElementById('P_ctrl');
-    const inputField_Ctrl_I = document.getElementById('I_ctrl');
-    const inputField_Ctrl_D = document.getElementById('D_ctrl');
+function CalcCtrl(HeightError: number, VvertError: number, deltaTime: number) {
+    const inputField_Ctrl_P = requireElement<HTMLInputElement>('P_ctrl');
+    const inputField_Ctrl_I = requireElement<HTMLInputElement>('I_ctrl');
+    const inputField_Ctrl_D = requireElement<HTMLInputElement>('D_ctrl');
     let Ctrl_P = parseFloat(inputField_Ctrl_P.value);
     let Ctrl_I = parseFloat(inputField_Ctrl_I.value);
     let Ctrl_D = parseFloat(inputField_Ctrl_D.value);
@@ -372,9 +406,15 @@ function CalcCtrl(HeightError, VvertError, deltaTime) {
     if (isNaN(Ctrl_D)) {
         Ctrl_D = 0;
     }
-    CtrlIntegral += HeightError * deltaTime;
-    uk = HeightError * Ctrl_P + VvertError * Ctrl_D + CtrlIntegral * Ctrl_I;
-    return uk;
+    const result = calculatePidOutput(
+        HeightError,
+        VvertError,
+        deltaTime,
+        { proportional: Ctrl_P, integral: Ctrl_I, derivative: Ctrl_D },
+        CtrlIntegral
+    );
+    CtrlIntegral = result.integralError;
+    return result.output;
 }
 
 function updateCtrlStates() {
@@ -390,7 +430,7 @@ function updateCtrlStates() {
     }
 }
 
-function updateDesiredPos(_refpath) {
+function updateDesiredPos(_refpath: PathPoint[]) {
     let closestY = null;
 
     for (let i = 0; i < _refpath.length; i++) {
