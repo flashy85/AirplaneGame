@@ -27,3 +27,14 @@ npm run typecheck
 npm test
 npm run build
 ```
+
+## Veröffentlichung mit GitHub Pages
+
+Der Workflow in `.github/workflows/deploy.yml` veröffentlicht das Spiel bei
+jedem Push auf `main` und kann außerdem manuell gestartet werden. In den
+Repository-Einstellungen unter **Settings → Pages** muss als Build-Quelle
+**GitHub Actions** ausgewählt sein.
+
+Nach dem ersten erfolgreichen Deployment ist das Spiel unter
+<https://flashy85.github.io/AirplaneGame/> erreichbar. Der lokale
+Entwicklungsserver verwendet weiterhin den Root-Pfad.
