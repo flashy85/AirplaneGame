@@ -18,8 +18,13 @@ body {
 }
 
 h1 {
+    position: absolute;
+    z-index: 11;
+    top: 12px;
+    left: 0;
+    right: 0;
     text-align: center;
-    margin: 0 auto
+    margin: 0;
 }
 
 .ControllerSettings {
@@ -207,6 +212,9 @@ h1 {
 }
 
 #GameArea {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
     width: 100vw;
     height: 100vh;
     /*position: relative;*/
